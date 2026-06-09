@@ -16,6 +16,16 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://sushantkandel.github.io
+        value: https://sushantkandel.github.io/guru-crm
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
       - key: NOMINATIM_USER_AGENT
         value: GuruCRM/1.0 (admin@crm.com)

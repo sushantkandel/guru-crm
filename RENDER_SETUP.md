@@ -46,11 +46,25 @@ Click **Advanced** → **Add Environment Variable**:
 |-----|--------|
 | `DATABASE_URL` | Your Neon string (`postgresql://...?sslmode=require`) |
 | `JWT_SECRET` | Any long random string (e.g. 32+ chars) |
-| `FRONTEND_URL` | `https://sushantkandel.github.io` |
+| `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` |
 | `NODE_ENV` | `production` |
 | `NOMINATIM_USER_AGENT` | `GuruCRM/1.0 (admin@crm.com)` |
 
-Do **not** commit `DATABASE_URL` to GitHub — paste only in Render.
+### Password reset (SMTP) — required for forgot-password
+
+| Key | Value |
+|-----|--------|
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | Your Gmail (e.g. `you@gmail.com`) |
+| `SMTP_PASS` | Gmail **App password** (16 chars) — not your login password |
+| `SMTP_FROM` | `Guru CRM <you@gmail.com>` |
+
+**Gmail app password:** [Google Account](https://myaccount.google.com/) → Security → 2-Step Verification → App passwords → Mail.
+
+After adding vars, **Manual Deploy** the service. Test: `npm run test-smtp -- you@gmail.com` (from `crm-app/backend` with same vars in `.env`).
+
+Do **not** commit `DATABASE_URL` or `SMTP_PASS` to GitHub — paste only in Render.
 
 ---
 

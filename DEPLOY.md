@@ -44,7 +44,7 @@ Short version:
 1. [render.com](https://render.com) → **New + → Web Service** (not Blueprint)
 2. Repo `sushantkandel/guru-crm`, **Root Directory** `crm-app/backend`
 3. Build: `npm install && npm run db:migrate:deploy` · Start: `npm start` · Plan: **Free**
-4. Env: `DATABASE_URL` (Neon), `JWT_SECRET`, `FRONTEND_URL=https://sushantkandel.github.io`
+4. Env: `DATABASE_URL` (Neon), `JWT_SECRET`, `FRONTEND_URL=https://sushantkandel.github.io/guru-crm`, plus SMTP vars (see below)
 5. Test: `https://guru-crm-api.onrender.com/api/health` → `{"status":"ok"}`
 
 **Demo login** (created by seed): `admin@crm.com` / `admin123`
@@ -72,7 +72,28 @@ Optional variable (`Settings → Variables`):
 3. Push to `main` or run workflow **Deploy frontend** manually
 4. Site: `https://YOUR_USER.github.io/guru-crm/`
 
-5. Update Render `FRONTEND_URL` to `https://YOUR_USER.github.io` and redeploy API (for password-reset links / CORS).
+5. Update Render `FRONTEND_URL` to `https://YOUR_USER.github.io/guru-crm` (include repo path) and redeploy API (for password-reset links / CORS).
+
+### Password reset email (SMTP on Render)
+
+Forgot-password needs SMTP on the **API** service. Without it, reset emails cannot be sent.
+
+1. **Gmail (easiest):** Google Account → Security → 2-Step Verification ON → **App passwords** → create one for Mail.
+2. Render → **guru-crm-api** → **Environment** → add:
+
+| Key | Value |
+|-----|--------|
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | your Gmail address |
+| `SMTP_PASS` | 16-character app password (not your normal Gmail password) |
+| `SMTP_FROM` | `Guru CRM <your@gmail.com>` |
+| `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` |
+
+3. **Save** and **Manual Deploy** the API.
+4. Test locally: `cd crm-app/backend && npm run test-smtp -- your@gmail.com`
+
+**Without SMTP:** reset password from terminal: `npm run reset-password -- admin@crm.com NewPass123`
 
 ### Google sign-in (production)
 

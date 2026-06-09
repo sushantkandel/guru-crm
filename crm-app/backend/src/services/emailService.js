@@ -3,19 +3,35 @@ const { APP_NAME } = require('../config/branding');
 
 let transporter = null;
 
+function isSmtpConfigured() {
+  const { SMTP_HOST, SMTP_USER, SMTP_PASS } = process.env;
+  return Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
+}
+
 function getTransporter() {
   if (transporter) return transporter;
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  if (!isSmtpConfigured()) {
     return null;
   }
 
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure =
+    process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || port === 465;
+
   transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT) || 587,
-    secure: false,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    host: process.env.SMTP_HOST,
+    port,
+    secure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    ...(secure
+      ? {}
+      : {
+          requireTLS: true,
+        }),
   });
 
   return transporter;
@@ -24,7 +40,7 @@ function getTransporter() {
 async function sendPasswordResetEmail(to, resetUrl) {
   const transport = getTransporter();
   if (!transport) {
-    throw new Error('SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in .env');
+    throw new Error('SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS on the server.');
   }
 
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
@@ -44,4 +60,4 @@ async function sendPasswordResetEmail(to, resetUrl) {
   });
 }
 
-module.exports = { sendPasswordResetEmail, getTransporter };
+module.exports = { sendPasswordResetEmail, getTransporter, isSmtpConfigured };

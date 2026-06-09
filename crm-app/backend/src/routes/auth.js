@@ -6,7 +6,8 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authMiddleware, roleGuard } = require('../middleware/auth');
 const { tenantMiddleware } = require('../middleware/tenant');
-const { sendPasswordResetEmail } = require('../services/emailService');
+const { buildPasswordResetUrl } = require('../config/frontendUrl');
+const { sendPasswordResetEmail, isSmtpConfigured } = require('../services/emailService');
 const { verifyGoogleToken } = require('../services/googleAuthService');
 const { slugify } = require('../services/tenantService');
 const { companyAddressSchema } = require('../schemas/companyAddress');
@@ -226,15 +227,21 @@ router.post('/forgot-password', async (req, res, next) => {
         data: { userId: user.id, token: tokenHash, expiresAt },
       });
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+      if (!isSmtpConfigured()) {
+        console.error('Password reset requested but SMTP is not configured on the server.');
+        return res.status(503).json({
+          error: 'Password reset email is not available yet. Ask your admin to configure SMTP, or use npm run reset-password on the server.',
+        });
+      }
+
+      const resetUrl = buildPasswordResetUrl(rawToken);
 
       try {
         await sendPasswordResetEmail(user.email, resetUrl);
       } catch (emailErr) {
         console.error('Failed to send reset email:', emailErr.message);
         return res.status(503).json({
-          error: 'Unable to send reset email. Check SMTP configuration.',
+          error: 'Unable to send reset email. Check SMTP host, port, and app password on the server.',
         });
       }
     }
