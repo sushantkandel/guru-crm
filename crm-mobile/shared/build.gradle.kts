@@ -7,8 +7,12 @@ val localProperties = Properties().apply {
         load(FileInputStream(file))
     }
 }
-// 127.0.0.1 + `adb reverse tcp:5001 tcp:5001` is the most reliable emulator setup on macOS.
-val debugApiBaseUrl: String = localProperties.getProperty("api.base.url") ?: "http://127.0.0.1:5001"
+// Default: production API. For local backend, set in local.properties (not committed):
+//   api.base.url=http://127.0.0.1:5001
+val productionApiBaseUrl = "https://guru-crm.onrender.com"
+val debugApiBaseUrl: String = localProperties.getProperty("api.base.url") ?: productionApiBaseUrl
+val releaseApiBaseUrl: String =
+    localProperties.getProperty("api.base.url.release") ?: productionApiBaseUrl
 
 plugins {
     kotlin("multiplatform")
@@ -95,11 +99,7 @@ android {
 
     buildTypes {
         getByName("release") {
-            buildConfigField(
-                "String",
-                "API_BASE_URL",
-                "\"https://api.gurucrm.example.com\"",
-            )
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
         }
     }
     compileOptions {
