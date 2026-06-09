@@ -68,13 +68,12 @@ NOMINATIM_USER_AGENT=GuruCRM/1.0 (your-contact@email.com)
 See **[BREVO_SETUP.md](../BREVO_SETUP.md)** in the repo root. Add to `backend/.env`:
 
 ```
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=your-brevo-login@email.com
-SMTP_PASS=your-brevo-smtp-key
-SMTP_FROM="Guru CRM <verified-sender@gmail.com>"
+BREVO_API_KEY=xkeysib-your-api-key
+BREVO_FROM="Guru CRM <verified-sender@gmail.com>"
 FRONTEND_URL=http://localhost:5173
 ```
+
+On Render free tier use the Brevo **API key** (not SMTP — ports 587/465 are blocked).
 
 Test: `npm run test-email -- recipient@example.com`
 

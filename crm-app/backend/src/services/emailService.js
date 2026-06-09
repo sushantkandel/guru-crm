@@ -10,8 +10,24 @@ function env(key) {
   return raw.trim().replace(/^["']|["']$/g, '');
 }
 
+function isBrevoApiConfigured() {
+  return Boolean(env('BREVO_API_KEY'));
+}
+
 function isSmtpConfigured() {
   return Boolean(env('SMTP_HOST') && env('SMTP_USER') && env('SMTP_PASS'));
+}
+
+function parseFromAddress(fromStr, fallbackEmail) {
+  const raw = fromStr || fallbackEmail || '';
+  const match = raw.match(/^(.+?)\s*<([^>]+)>$/);
+  if (match) {
+    return { name: match[1].trim(), email: match[2].trim() };
+  }
+  if (raw.includes('@')) {
+    return { name: APP_NAME, email: raw };
+  }
+  return { name: APP_NAME, email: fallbackEmail };
 }
 
 function getTransporter() {
@@ -42,7 +58,7 @@ function getTransporter() {
   return transporter;
 }
 
-const SMTP_SEND_TIMEOUT_MS = 20_000;
+const EMAIL_SEND_TIMEOUT_MS = 20_000;
 
 function buildResetMailContent(resetUrl) {
   return {
@@ -65,6 +81,64 @@ function withTimeout(promise, ms, message) {
       setTimeout(() => reject(new Error(message)), ms);
     }),
   ]);
+}
+
+async function sendViaBrevoApi(to, resetUrl) {
+  const apiKey = env('BREVO_API_KEY');
+  const fromRaw = env('BREVO_FROM') || env('SMTP_FROM');
+  const sender = parseFromAddress(fromRaw, env('SMTP_USER'));
+  const content = buildResetMailContent(resetUrl);
+
+  let response;
+  try {
+    response = await withTimeout(
+      fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender,
+          to: [{ email: to }],
+          subject: content.subject,
+          htmlContent: content.html,
+          textContent: content.text,
+        }),
+      }),
+      EMAIL_SEND_TIMEOUT_MS,
+      'Brevo API timed out',
+    );
+  } catch (err) {
+    const msg = err.message || '';
+    if (/timed out/i.test(msg)) {
+      throw new Error('Brevo API timed out. Check BREVO_API_KEY on Render.');
+    }
+    throw new Error(`Brevo request failed: ${msg}`);
+  }
+
+  if (!response.ok) {
+    const body = await response.text();
+    let detail = body;
+    try {
+      const parsed = JSON.parse(body);
+      detail = parsed.message || parsed.error || body;
+    } catch {
+      // keep raw body
+    }
+
+    const hint = String(detail).toLowerCase();
+    if (response.status === 401 || hint.includes('api key') || hint.includes('unauthorized')) {
+      throw new Error('Brevo API key is invalid. Use the v3 API key from Brevo → SMTP & API → API keys.');
+    }
+    if (hint.includes('sender') || hint.includes('not verified')) {
+      throw new Error(
+        `Brevo sender not verified. Verify ${sender.email} in Brevo → Senders. Detail: ${detail}`,
+      );
+    }
+    throw new Error(`Brevo error: ${detail}`);
+  }
 }
 
 async function sendViaResend(to, resetUrl) {
@@ -93,7 +167,7 @@ async function sendViaResend(to, resetUrl) {
           text: content.text,
         }),
       }),
-      SMTP_SEND_TIMEOUT_MS,
+      EMAIL_SEND_TIMEOUT_MS,
       'Resend API timed out',
     );
   } catch (err) {
@@ -116,7 +190,7 @@ async function sendViaResend(to, resetUrl) {
     }
     if (hint.includes('only send') || hint.includes('testing') || hint.includes('verify a domain')) {
       throw new Error(
-        `Resend rejected this recipient. Free tier only allows your Resend account email (check resend.com → profile). Detail: ${detail}`,
+        `Resend rejected this recipient. Free tier only allows your Resend account email. Detail: ${detail}`,
       );
     }
     if (hint.includes('from') || hint.includes('sender')) {
@@ -129,7 +203,12 @@ async function sendViaResend(to, resetUrl) {
 async function sendPasswordResetEmail(to, resetUrl) {
   const content = buildResetMailContent(resetUrl);
 
-  // Prefer SMTP (Brevo, etc.) — works for any recipient on free tier
+  // Brevo HTTP API — works on Render free tier (SMTP ports 587/465 are blocked there)
+  if (isBrevoApiConfigured()) {
+    await sendViaBrevoApi(to, resetUrl);
+    return;
+  }
+
   const transport = getTransporter();
   if (transport) {
     const from = env('SMTP_FROM') || env('SMTP_USER');
@@ -141,8 +220,8 @@ async function sendPasswordResetEmail(to, resetUrl) {
         html: content.html,
         text: content.text,
       }),
-      SMTP_SEND_TIMEOUT_MS,
-      'SMTP server timed out. Check Brevo SMTP key and sender verification.',
+      EMAIL_SEND_TIMEOUT_MS,
+      'SMTP connection timed out. On Render free tier use BREVO_API_KEY instead of SMTP.',
     );
     return;
   }
@@ -153,18 +232,19 @@ async function sendPasswordResetEmail(to, resetUrl) {
   }
 
   throw new Error(
-    'Email is not configured. Set Brevo SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS) on the server.',
+    'Email is not configured. On Render set BREVO_API_KEY (see BREVO_SETUP.md).',
   );
 }
 
 function isEmailConfigured() {
-  return isSmtpConfigured() || Boolean(env('RESEND_API_KEY'));
+  return isBrevoApiConfigured() || isSmtpConfigured() || Boolean(env('RESEND_API_KEY'));
 }
 
 function getEmailProvider() {
+  if (isBrevoApiConfigured()) return 'brevo';
   if (isSmtpConfigured()) {
     const host = env('SMTP_HOST') || '';
-    if (host.includes('brevo.com')) return 'brevo';
+    if (host.includes('brevo.com')) return 'brevo-smtp';
     return 'smtp';
   }
   if (env('RESEND_API_KEY')) return 'resend';

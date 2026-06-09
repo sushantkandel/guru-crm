@@ -17,19 +17,9 @@ services:
         generateValue: true
       - key: FRONTEND_URL
         value: https://sushantkandel.github.io/guru-crm
-      - key: SMTP_HOST
-        value: smtp-relay.brevo.com
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
+      - key: BREVO_API_KEY
         sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: SMTP_FROM
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: RESEND_FROM
+      - key: BREVO_FROM
         sync: false
       - key: NOMINATIM_USER_AGENT
         value: GuruCRM/1.0 (admin@crm.com)

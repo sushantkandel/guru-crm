@@ -80,14 +80,11 @@ Forgot-password uses **Brevo SMTP** on the API service. See **[BREVO_SETUP.md](B
 
 | Key | Value |
 |-----|--------|
-| `SMTP_HOST` | `smtp-relay.brevo.com` |
-| `SMTP_PORT` | `587` |
-| `SMTP_USER` | Brevo account email |
-| `SMTP_PASS` | Brevo SMTP key |
-| `SMTP_FROM` | `Guru CRM <verified-sender@gmail.com>` |
+| `BREVO_API_KEY` | `xkeysib-...` (Brevo API key — not SMTP key) |
+| `BREVO_FROM` | `Guru CRM <verified-sender@gmail.com>` |
 | `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` |
 
-Remove `RESEND_API_KEY` on Render if switching from Resend. **Manual Deploy** after saving.
+Remove SMTP and Resend vars. SMTP is **blocked** on Render free tier. **Manual Deploy** after saving.
 
 **Without email:** `npm run reset-password -- admin@crm.com NewPass123`
 

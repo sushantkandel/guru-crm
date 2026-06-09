@@ -52,17 +52,14 @@ Click **Advanced** → **Add Environment Variable**:
 
 ### Password reset email — required for forgot-password
 
-**Recommended: [Brevo](https://www.brevo.com)** (free ~300/day, sends to any Gmail). Full steps: **[BREVO_SETUP.md](BREVO_SETUP.md)**
+**Recommended: [Brevo](https://www.brevo.com)** HTTP API (Render free tier blocks SMTP). Full steps: **[BREVO_SETUP.md](BREVO_SETUP.md)**
 
 | Key | Value |
 |-----|--------|
-| `SMTP_HOST` | `smtp-relay.brevo.com` |
-| `SMTP_PORT` | `587` |
-| `SMTP_USER` | Your Brevo login email |
-| `SMTP_PASS` | Brevo **SMTP key** (from SMTP & API → SMTP) |
-| `SMTP_FROM` | `Guru CRM <your-verified@gmail.com>` |
+| `BREVO_API_KEY` | `xkeysib-...` from Brevo → SMTP & API → **API keys** |
+| `BREVO_FROM` | `Guru CRM <your-verified@gmail.com>` |
 
-Remove `RESEND_API_KEY` if you used Resend before.
+Do **not** use SMTP on Render free tier (connection timeout).
 
 After adding vars, **Manual Deploy** the service. Check: `/api/health` → `"emailProvider":"brevo"`.
 

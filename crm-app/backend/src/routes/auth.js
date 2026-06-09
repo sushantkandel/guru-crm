@@ -230,7 +230,7 @@ router.post('/forgot-password', async (req, res, next) => {
       if (!isEmailConfigured()) {
         console.error('Password reset requested but email is not configured on the server.');
         return res.status(503).json({
-          error: 'Password reset email is not available yet. Ask your admin to configure RESEND_API_KEY or SMTP on the server.',
+          error: 'Password reset email is not available yet. Ask your admin to configure BREVO_API_KEY on the server.',
         });
       }
 
@@ -243,7 +243,7 @@ router.post('/forgot-password', async (req, res, next) => {
         return res.status(503).json({
           error:
             emailErr.message ||
-            'Unable to send reset email. Check SMTP or Resend configuration on the server.',
+            'Unable to send reset email. Check BREVO_API_KEY on the server (see BREVO_SETUP.md).',
         });
       }
     }
