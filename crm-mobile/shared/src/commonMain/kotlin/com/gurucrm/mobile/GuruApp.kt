@@ -15,9 +15,18 @@ import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.TokenStore
 import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.platform.createPlatformServices
+import com.gurucrm.mobile.ui.ForgotPasswordScreen
 import com.gurucrm.mobile.ui.GuruTheme
 import com.gurucrm.mobile.ui.LoginScreen
 import com.gurucrm.mobile.ui.MainShell
+import com.gurucrm.mobile.ui.RegisterCompanyScreen
+import kotlinx.coroutines.launch
+
+private enum class AuthScreen {
+    Login,
+    ForgotPassword,
+    RegisterCompany,
+}
 
 @Composable
 fun GuruApp() {
@@ -26,10 +35,27 @@ fun GuruApp() {
     val platform = remember { createPlatformServices() }
     var user by remember { mutableStateOf<UserDto?>(null) }
     var bootstrapping by remember { mutableStateOf(true) }
+    var authScreen by remember { mutableStateOf(AuthScreen.Login) }
 
     LaunchedEffect(Unit) {
-        user = api.restoreSession()
-        bootstrapping = false
+        val token = tokenStore.getToken()
+        if (token == null) {
+            bootstrapping = false
+            return@LaunchedEffect
+        }
+
+        val cachedUser = tokenStore.getUser()
+        if (cachedUser != null) {
+            user = cachedUser
+            bootstrapping = false
+            launch {
+                val refreshed = api.restoreSessionWithTimeout()
+                user = refreshed
+            }
+        } else {
+            user = api.restoreSessionWithTimeout()
+            bootstrapping = false
+        }
     }
 
     GuruTheme {
@@ -40,14 +66,37 @@ fun GuruApp() {
                 }
             }
             user == null -> {
-                LoginScreen(api = api, onLoggedIn = { user = it })
+                when (authScreen) {
+                    AuthScreen.Login -> LoginScreen(
+                        api = api,
+                        onLoggedIn = { user = it },
+                        onForgotPassword = { authScreen = AuthScreen.ForgotPassword },
+                        onRegisterCompany = { authScreen = AuthScreen.RegisterCompany },
+                    )
+                    AuthScreen.ForgotPassword -> ForgotPasswordScreen(
+                        api = api,
+                        onBack = { authScreen = AuthScreen.Login },
+                    )
+                    AuthScreen.RegisterCompany -> RegisterCompanyScreen(
+                        api = api,
+                        onBack = { authScreen = AuthScreen.Login },
+                        onRegistered = {
+                            user = it
+                            authScreen = AuthScreen.Login
+                        },
+                    )
+                }
             }
             else -> {
                 MainShell(
                     api = api,
                     platform = platform,
                     user = user!!,
-                    onLogout = { user = null },
+                    onLogout = {
+                        api.logout()
+                        user = null
+                        authScreen = AuthScreen.Login
+                    },
                 )
             }
         }

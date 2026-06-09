@@ -23,6 +23,31 @@ data class AuthResponse(val token: String, val user: UserDto)
 data class ErrorResponse(val error: String? = null)
 
 @Serializable
+data class MessageResponse(val message: String = "")
+
+@Serializable
+data class ForgotPasswordRequest(val email: String)
+
+@Serializable
+data class CompanyAddressInput(
+    val country: String = "Nepal",
+    val province: String,
+    val district: String,
+    val municipality: String,
+    val street: String,
+)
+
+@Serializable
+data class RegisterCompanyRequest(
+    val companyName: String,
+    val ownerName: String,
+    val email: String,
+    val password: String,
+    val phone: String = "",
+    val address: CompanyAddressInput,
+)
+
+@Serializable
 data class BalanceDto(
     val totalOrders: Double = 0.0,
     val totalPaid: Double = 0.0,

@@ -14,7 +14,10 @@ import com.gurucrm.mobile.data.NepalProvincesResponse
 import com.gurucrm.mobile.data.NepalWardsResponse
 import com.gurucrm.mobile.data.DashboardStatsDto
 import com.gurucrm.mobile.data.ErrorResponse
+import com.gurucrm.mobile.data.ForgotPasswordRequest
 import com.gurucrm.mobile.data.LoginRequest
+import com.gurucrm.mobile.data.MessageResponse
+import com.gurucrm.mobile.data.RegisterCompanyRequest
 import com.gurucrm.mobile.data.LatLng
 import com.gurucrm.mobile.data.MapLocationQuery
 import com.gurucrm.mobile.data.OrderCreateRequest
@@ -55,6 +58,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 
 class ApiException(message: String) : Exception(message)
@@ -82,6 +86,19 @@ class GuruApi(private val tokenStore: TokenStore) {
 
     private fun connectionErrorMessage(): String =
         "Could not connect to the server. Please check your internet connection and try again."
+
+    private suspend inline fun <reified T> publicGet(
+        path: String,
+        params: Map<String, String> = emptyMap(),
+    ): T {
+        val response = client.get("/api$path") {
+            params.forEach { (key, value) -> parameter(key, value) }
+        }
+        if (!response.status.isSuccess()) {
+            throw ApiException(parseError(response.bodyAsText()))
+        }
+        return response.body()
+    }
 
     private suspend inline fun <reified T> authorizedGet(
         path: String,
@@ -185,6 +202,54 @@ class GuruApi(private val tokenStore: TokenStore) {
         }
     }
 
+    suspend fun restoreSessionWithTimeout(timeoutMs: Long = 12_000): UserDto? {
+        val token = tokenStore.getToken() ?: return null
+        return try {
+            withTimeout(timeoutMs) { restoreSession() }
+        } catch (_: Exception) {
+            tokenStore.clear()
+            null
+        }
+    }
+
+    suspend fun forgotPassword(email: String): String {
+        val response = try {
+            client.post("/api/auth/forgot-password") {
+                setBody(ForgotPasswordRequest(email.trim()))
+            }
+        } catch (e: Exception) {
+            if (e is SocketTimeoutException || e is HttpRequestTimeoutException ||
+                e.message?.contains("connect", ignoreCase = true) == true
+            ) {
+                throw ApiException(connectionErrorMessage())
+            }
+            throw ApiException(e.message ?: "Request failed")
+        }
+        if (!response.status.isSuccess()) {
+            throw ApiException(parseError(response.bodyAsText()))
+        }
+        return response.body<MessageResponse>().message
+    }
+
+    suspend fun registerCompany(body: RegisterCompanyRequest): AuthResponse {
+        val response = try {
+            client.post("/api/auth/register-company") { setBody(body) }
+        } catch (e: Exception) {
+            if (e is SocketTimeoutException || e is HttpRequestTimeoutException ||
+                e.message?.contains("connect", ignoreCase = true) == true
+            ) {
+                throw ApiException(connectionErrorMessage())
+            }
+            throw ApiException(e.message ?: "Registration failed")
+        }
+        if (!response.status.isSuccess()) {
+            throw ApiException(parseError(response.bodyAsText()))
+        }
+        val auth = response.body<AuthResponse>()
+        tokenStore.saveSession(auth.token, auth.user)
+        return auth
+    }
+
     fun logout() {
         tokenStore.clear()
     }
@@ -218,19 +283,19 @@ class GuruApi(private val tokenStore: TokenStore) {
         authorizedPost("/map/geocode", GeocodeRequest(address))
 
     suspend fun nepalProvinces(): List<String> =
-        authorizedGet<NepalProvincesResponse>("/locations/nepal").provinces
+        publicGet<NepalProvincesResponse>("/locations/nepal").provinces
 
     suspend fun nepalDistricts(province: String): List<String> =
-        authorizedGet<NepalDistrictsResponse>("/locations/nepal", mapOf("province" to province)).districts
+        publicGet<NepalDistrictsResponse>("/locations/nepal", mapOf("province" to province)).districts
 
     suspend fun nepalMunicipalities(province: String, district: String): List<String> =
-        authorizedGet<NepalMunicipalitiesResponse>(
+        publicGet<NepalMunicipalitiesResponse>(
             "/locations/nepal",
             mapOf("province" to province, "district" to district),
         ).municipalities
 
     suspend fun nepalWards(province: String, district: String, municipality: String): List<String> =
-        authorizedGet<NepalWardsResponse>(
+        publicGet<NepalWardsResponse>(
             "/locations/nepal",
             mapOf("province" to province, "district" to district, "municipality" to municipality),
         ).wards

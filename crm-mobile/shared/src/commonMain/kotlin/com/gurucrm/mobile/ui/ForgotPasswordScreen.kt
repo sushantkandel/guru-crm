@@ -1,12 +1,13 @@
 package com.gurucrm.mobile.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -16,67 +17,63 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.gurucrm.mobile.api.GuruApi
-import com.gurucrm.mobile.data.UserDto
-import com.gurucrm.mobile.ui.components.GuruPasswordField
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
+import com.gurucrm.mobile.ui.components.GuruScaffold
 import com.gurucrm.mobile.ui.components.GuruTextField
 import com.gurucrm.mobile.ui.theme.GuruSpacing
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(
-    api: GuruApi,
-    onLoggedIn: (UserDto) -> Unit,
-    onForgotPassword: () -> Unit,
-    onRegisterCompany: () -> Unit,
-) {
+fun ForgotPasswordScreen(api: GuruApi, onBack: () -> Unit) {
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    Column(
-        Modifier.fillMaxSize().padding(GuruSpacing.authPadding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(GuruSpacing.xxl))
-
-        Text("Guru CRM", style = MaterialTheme.typography.headlineLarge)
-        Spacer(Modifier.height(GuruSpacing.sm))
-        Text("Field sales mobile", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-        Spacer(Modifier.height(GuruSpacing.xl))
-
+    GuruScaffold(title = "Forgot password", onBack = onBack) { padding ->
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(GuruSpacing.fieldGap),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(GuruSpacing.authPadding),
         ) {
-            GuruTextField(value = email, onValueChange = { email = it }, label = "Email")
-            GuruPasswordField(value = password, onValueChange = { password = it }, label = "Password")
+            Text(
+                "Enter your email and we will send a password reset link.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
-            // Full 24dp between last field and actions (not inside GuruFormColumn).
+            Spacer(Modifier.height(GuruSpacing.lg))
+
+            GuruTextField(value = email, onValueChange = { email = it }, label = "Email")
+
             Spacer(Modifier.height(GuruSpacing.actionGap))
 
             error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(GuruSpacing.sm))
+            }
+            message?.let {
+                Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(GuruSpacing.sm))
             }
 
             GuruPrimaryButton(
-                text = if (loading) "Signing in…" else "Sign in",
-                enabled = !loading && email.isNotBlank() && password.isNotBlank(),
+                text = if (loading) "Sending…" else "Send reset link",
+                enabled = !loading && email.isNotBlank(),
                 onClick = {
                     loading = true
                     error = null
+                    message = null
                     scope.launch {
                         try {
-                            val auth = api.login(email.trim(), password)
-                            onLoggedIn(auth.user)
+                            message = api.forgotPassword(email.trim())
                         } catch (e: Exception) {
-                            error = e.message ?: "Login failed"
+                            error = e.message ?: "Failed to send reset email"
                         } finally {
                             loading = false
                         }
@@ -85,11 +82,8 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            TextButton(onClick = onForgotPassword, modifier = Modifier.fillMaxWidth()) {
-                Text("Forgot password?")
-            }
-            TextButton(onClick = onRegisterCompany, modifier = Modifier.fillMaxWidth()) {
-                Text("Create your company")
+            TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                Text("Back to sign in")
             }
         }
     }

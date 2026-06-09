@@ -29,6 +29,7 @@ data class NepalLocationState(
 fun NepalLocationFields(
     api: GuruApi,
     value: NepalLocationState,
+    includeWard: Boolean = true,
     onChange: (NepalLocationState) -> Unit,
 ) {
     var provinces by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -47,9 +48,9 @@ fun NepalLocationFields(
             runCatching { municipalities = api.nepalMunicipalities(value.province, value.district) }
         }
     }
-    LaunchedEffect(value.province, value.district, value.municipality) {
+    LaunchedEffect(value.province, value.district, value.municipality, includeWard) {
         wards = emptyList()
-        if (value.municipality.isNotBlank()) {
+        if (includeWard && value.municipality.isNotBlank()) {
             runCatching { wards = api.nepalWards(value.province, value.district, value.municipality) }
         }
     }
@@ -79,13 +80,15 @@ fun NepalLocationFields(
                 onSelect = { onChange(value.copy(municipality = it, ward = "")) },
             )
         }
-        LocationDropdown(
-            label = "Ward",
-            value = value.ward,
-            options = wards,
-            enabled = value.municipality.isNotBlank(),
-            onSelect = { onChange(value.copy(ward = it)) },
-        )
+        if (includeWard) {
+            LocationDropdown(
+                label = "Ward",
+                value = value.ward,
+                options = wards,
+                enabled = value.municipality.isNotBlank(),
+                onSelect = { onChange(value.copy(ward = it)) },
+            )
+        }
     }
 }
 
