@@ -80,14 +80,8 @@ class GuruApi(private val tokenStore: TokenStore) {
         }
     }
 
-    private fun connectionErrorMessage(cause: Throwable?): String {
-        val base = apiBaseUrl()
-        val detail = cause?.message?.takeIf { it.isNotBlank() } ?: "Connection refused"
-        return "Cannot reach API at $base ($detail). " +
-            "1) Start backend: cd crm-app/backend && npm run dev " +
-            "2) Emulator: run adb reverse tcp:5001 tcp:5001 " +
-            "3) Physical phone: set api.base.url=http://YOUR_PC_IP:5001 in crm-mobile/local.properties and rebuild."
-    }
+    private fun connectionErrorMessage(): String =
+        "Could not connect to the server. Please check your internet connection and try again."
 
     private suspend inline fun <reified T> authorizedGet(
         path: String,
@@ -165,7 +159,7 @@ class GuruApi(private val tokenStore: TokenStore) {
                 e.message?.contains("connect", ignoreCase = true) == true ||
                 e.message?.contains("Failed to connect", ignoreCase = true) == true
             ) {
-                throw ApiException(connectionErrorMessage(e))
+                throw ApiException(connectionErrorMessage())
             }
             throw ApiException(e.message ?: "Login failed")
         }

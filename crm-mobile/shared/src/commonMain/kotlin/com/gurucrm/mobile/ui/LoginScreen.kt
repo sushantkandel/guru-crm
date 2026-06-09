@@ -18,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.gurucrm.mobile.api.GuruApi
-import com.gurucrm.mobile.apiBaseUrl
 import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.ui.components.GuruPasswordField
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
@@ -43,12 +42,6 @@ fun LoginScreen(api: GuruApi, onLoggedIn: (UserDto) -> Unit) {
         Text("Guru CRM", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(GuruSpacing.sm))
         Text("Field sales mobile", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(GuruSpacing.xs))
-        Text(
-            "API: ${apiBaseUrl()}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
 
         Spacer(Modifier.height(GuruSpacing.xl))
 
