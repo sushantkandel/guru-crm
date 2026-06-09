@@ -10,8 +10,64 @@ function env(key) {
   return raw.trim().replace(/^["']|["']$/g, '');
 }
 
+function getBrevoApiKey() {
+  return env('BREVO_API_KEY');
+}
+
 function isBrevoApiConfigured() {
-  return Boolean(env('BREVO_API_KEY'));
+  return Boolean(getBrevoApiKey());
+}
+
+function validateBrevoApiKeyFormat(apiKey) {
+  if (!apiKey) {
+    throw new Error('BREVO_API_KEY is not set on the server.');
+  }
+  if (!apiKey.startsWith('xkeysib-')) {
+    throw new Error(
+      'BREVO_API_KEY must start with xkeysib-. You may have pasted the SMTP key (SMTP tab) instead of the API key (API keys tab). In Brevo → SMTP & API → API keys → Generate a new API key.',
+    );
+  }
+}
+
+function brevoApiKeyFormatOk() {
+  const key = getBrevoApiKey();
+  if (!key) return false;
+  return key.startsWith('xkeysib-');
+}
+
+function formatBrevoApiError(status, detail) {
+  const hint = String(detail).toLowerCase();
+
+  if (
+    hint.includes('ip not authorized') ||
+    hint.includes('not verified') ||
+    hint.includes('validate your ip') ||
+    (status === 401 && hint.includes('unauthorized') && !hint.includes('api key'))
+  ) {
+    return (
+      'Brevo blocked this request from Render (IP not authorized). ' +
+      'Check the Brevo account inbox for "Validate your IP address" and click the link, ' +
+      'or add Render outbound IPs: Render → guru-crm-api → Connect → Outbound, ' +
+      'then Brevo → Security → Authorized IPs. See BREVO_SETUP.md.'
+    );
+  }
+
+  if (status === 401 || hint.includes('api key') || hint.includes('key not found')) {
+    return (
+      'Brevo API key rejected. Use a key from Brevo → SMTP & API → API keys (starts with xkeysib-), ' +
+      'not the SMTP key. Regenerate if needed, update BREVO_API_KEY on Render, and redeploy.'
+    );
+  }
+
+  if (hint.includes('not yet activated') || hint.includes('smtp account is not')) {
+    return (
+      'Brevo transactional email is not activated on your account yet. ' +
+      'Email contact@brevo.com to request activation (usually 1–2 business days). ' +
+      'Until then, reset passwords with: npm run reset-password -- user@email.com NewPass123'
+    );
+  }
+
+  return `Brevo error: ${detail}`;
 }
 
 function isSmtpConfigured() {
@@ -84,7 +140,8 @@ function withTimeout(promise, ms, message) {
 }
 
 async function sendViaBrevoApi(to, resetUrl) {
-  const apiKey = env('BREVO_API_KEY');
+  const apiKey = getBrevoApiKey();
+  validateBrevoApiKeyFormat(apiKey);
   const fromRaw = env('BREVO_FROM') || env('SMTP_FROM');
   const sender = parseFromAddress(fromRaw, env('SMTP_USER'));
   const content = buildResetMailContent(resetUrl);
@@ -129,15 +186,12 @@ async function sendViaBrevoApi(to, resetUrl) {
     }
 
     const hint = String(detail).toLowerCase();
-    if (response.status === 401 || hint.includes('api key') || hint.includes('unauthorized')) {
-      throw new Error('Brevo API key is invalid. Use the v3 API key from Brevo → SMTP & API → API keys.');
-    }
-    if (hint.includes('sender') || hint.includes('not verified')) {
+    if (hint.includes('sender') && !hint.includes('ip')) {
       throw new Error(
         `Brevo sender not verified. Verify ${sender.email} in Brevo → Senders. Detail: ${detail}`,
       );
     }
-    throw new Error(`Brevo error: ${detail}`);
+    throw new Error(formatBrevoApiError(response.status, detail));
   }
 }
 
@@ -257,4 +311,5 @@ module.exports = {
   isSmtpConfigured,
   isEmailConfigured,
   getEmailProvider,
+  brevoApiKeyFormatOk,
 };

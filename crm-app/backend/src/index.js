@@ -46,11 +46,16 @@ app.use(
 );
 app.use(express.json());
 
-const { getEmailProvider } = require('./services/emailService');
+const { getEmailProvider, brevoApiKeyFormatOk } = require('./services/emailService');
 
-app.get('/api/health', (req, res) =>
-  res.json({ status: 'ok', emailProvider: getEmailProvider() }),
-);
+app.get('/api/health', (req, res) => {
+  const emailProvider = getEmailProvider();
+  const payload = { status: 'ok', emailProvider };
+  if (emailProvider === 'brevo') {
+    payload.brevoKeyFormat = brevoApiKeyFormatOk() ? 'ok' : 'invalid-use-xkeysib-api-key';
+  }
+  res.json(payload);
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
