@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleLoginButton from '../components/GoogleLoginButton';
@@ -19,8 +19,13 @@ import { APP_NAME } from '../config/branding';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fieldsReady, setFieldsReady] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setFieldsReady(true);
+  }, []);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,22 +70,49 @@ export default function Login() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" autoComplete="off">
+          {/* Decoy fields — browsers autofill these instead of the real inputs */}
+          <input
+            type="text"
+            name="prevent_autofill_username"
+            tabIndex={-1}
+            autoComplete="username"
+            className="absolute -left-[9999px] h-px w-px opacity-0"
+            aria-hidden="true"
+          />
+          <input
+            type="password"
+            name="prevent_autofill_password"
+            tabIndex={-1}
+            autoComplete="current-password"
+            className="absolute -left-[9999px] h-px w-px opacity-0"
+            aria-hidden="true"
+          />
           <div>
-            <label className={formLabel}>Email</label>
+            <label className={formLabel} htmlFor="guru-login-email">Email</label>
             <input
+              id="guru-login-email"
               type="email"
+              name="guru-login-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={formInput}
+              autoComplete="off"
+              readOnly={!fieldsReady}
+              onFocus={(e) => e.target.removeAttribute('readonly')}
               required
             />
           </div>
           <div>
-            <label className={formLabel}>Password</label>
+            <label className={formLabel} htmlFor="guru-login-password">Password</label>
             <PasswordInput
+              id="guru-login-password"
+              name="guru-login-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              readOnly={!fieldsReady}
+              onFocus={(e) => e.target.removeAttribute('readonly')}
               required
             />
           </div>

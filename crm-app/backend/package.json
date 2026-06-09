@@ -13,6 +13,7 @@
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
     "reset-password": "node scripts/reset-password.js",
+    "db:clear": "node scripts/clear-database.js",
     "db:studio": "prisma studio",
     "locations:sync": "node scripts/syncNepalLocations.js",
     "boundaries:sync": "node scripts/syncNepalBoundaries.js"

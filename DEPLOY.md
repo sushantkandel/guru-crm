@@ -61,6 +61,7 @@ Short version:
 | Secret | Example |
 |--------|---------|
 | `VITE_API_URL` | `https://guru-crm-api.onrender.com` |
+| `VITE_GOOGLE_CLIENT_ID` | Same as backend `GOOGLE_CLIENT_ID` (OAuth Web client ID) |
 
 Optional variable (`Settings → Variables`):
 
@@ -72,6 +73,16 @@ Optional variable (`Settings → Variables`):
 4. Site: `https://YOUR_USER.github.io/guru-crm/`
 
 5. Update Render `FRONTEND_URL` to `https://YOUR_USER.github.io` and redeploy API (for password-reset links / CORS).
+
+### Google sign-in (production)
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials** → your **OAuth 2.0 Web client**
+2. **Authorized JavaScript origins** — add:
+   - `https://sushantkandel.github.io`
+   - `http://localhost:5173` (local dev)
+3. **Render** → service **Environment** → set `GOOGLE_CLIENT_ID` to the same Web client ID
+4. **GitHub** → repo **Secrets** → `VITE_GOOGLE_CLIENT_ID` = same client ID
+5. Re-run **Deploy frontend (GitHub Pages)** workflow so the ID is baked into the build
 
 ---
 
