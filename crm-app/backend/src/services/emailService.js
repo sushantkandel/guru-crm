@@ -27,27 +27,19 @@ function getTransporter() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    ...(secure
-      ? {}
-      : {
-          requireTLS: true,
-        }),
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
+    ...(secure ? {} : { requireTLS: true }),
   });
 
   return transporter;
 }
 
-async function sendPasswordResetEmail(to, resetUrl) {
-  const transport = getTransporter();
-  if (!transport) {
-    throw new Error('SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS on the server.');
-  }
+const SMTP_SEND_TIMEOUT_MS = 20_000;
 
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-
-  await transport.sendMail({
-    from,
-    to,
+function buildResetMailContent(resetUrl) {
+  return {
     subject: `Reset your ${APP_NAME} password`,
     html: `
       <h2>Password Reset</h2>
@@ -57,7 +49,83 @@ async function sendPasswordResetEmail(to, resetUrl) {
       <p style="color:#666;font-size:12px;">${resetUrl}</p>
     `,
     text: `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`,
-  });
+  };
 }
 
-module.exports = { sendPasswordResetEmail, getTransporter, isSmtpConfigured };
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]);
+}
+
+async function sendViaResend(to, resetUrl) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM || process.env.SMTP_FROM || `Guru CRM <onboarding@resend.dev>`;
+  const content = buildResetMailContent(resetUrl);
+
+  const response = await withTimeout(
+    fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: content.subject,
+        html: content.html,
+        text: content.text,
+      }),
+    }),
+    SMTP_SEND_TIMEOUT_MS,
+    'Email API timed out',
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Email API failed (${response.status}): ${body}`);
+  }
+}
+
+async function sendPasswordResetEmail(to, resetUrl) {
+  const content = buildResetMailContent(resetUrl);
+
+  if (process.env.RESEND_API_KEY) {
+    await sendViaResend(to, resetUrl);
+    return;
+  }
+
+  const transport = getTransporter();
+  if (!transport) {
+    throw new Error('SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS on the server.');
+  }
+
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  await withTimeout(
+    transport.sendMail({
+      from,
+      to,
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
+    }),
+    SMTP_SEND_TIMEOUT_MS,
+    'SMTP server timed out. Gmail SMTP may be blocked from this host — try Resend (RESEND_API_KEY) instead.',
+  );
+}
+
+function isEmailConfigured() {
+  return isSmtpConfigured() || Boolean(process.env.RESEND_API_KEY);
+}
+
+module.exports = {
+  sendPasswordResetEmail,
+  getTransporter,
+  isSmtpConfigured,
+  isEmailConfigured,
+};

@@ -27,5 +27,9 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
       - key: NOMINATIM_USER_AGENT
         value: GuruCRM/1.0 (admin@crm.com)

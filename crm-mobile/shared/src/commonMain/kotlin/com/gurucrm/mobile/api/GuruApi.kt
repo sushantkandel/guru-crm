@@ -74,9 +74,9 @@ class GuruApi(private val tokenStore: TokenStore) {
         install(ContentNegotiation) { json(json) }
         install(Logging) { level = LogLevel.INFO }
         install(HttpTimeout) {
-            requestTimeoutMillis = 30_000
-            connectTimeoutMillis = 15_000
-            socketTimeoutMillis = 30_000
+            requestTimeoutMillis = 45_000
+            connectTimeoutMillis = 25_000
+            socketTimeoutMillis = 45_000
         }
         defaultRequest {
             url(apiBaseUrl())
@@ -84,8 +84,16 @@ class GuruApi(private val tokenStore: TokenStore) {
         }
     }
 
-    private fun connectionErrorMessage(): String =
-        "Could not connect to the server. Please check your internet connection and try again."
+    private fun mapNetworkError(e: Exception, fallback: String): ApiException {
+        return when {
+            e is SocketTimeoutException || e is HttpRequestTimeoutException ->
+                ApiException("The server took too long to respond. Wait 30 seconds and try again.")
+            e.message?.contains("connect", ignoreCase = true) == true ||
+                e.message?.contains("Failed to connect", ignoreCase = true) == true ->
+                ApiException("Could not reach the server. It may be waking up — wait a moment and try again.")
+            else -> ApiException(e.message ?: fallback)
+        }
+    }
 
     private suspend inline fun <reified T> publicGet(
         path: String,
@@ -172,13 +180,7 @@ class GuruApi(private val tokenStore: TokenStore) {
                 setBody(LoginRequest(email, password))
             }
         } catch (e: Exception) {
-            if (e is SocketTimeoutException || e is HttpRequestTimeoutException ||
-                e.message?.contains("connect", ignoreCase = true) == true ||
-                e.message?.contains("Failed to connect", ignoreCase = true) == true
-            ) {
-                throw ApiException(connectionErrorMessage())
-            }
-            throw ApiException(e.message ?: "Login failed")
+            throw mapNetworkError(e, "Login failed")
         }
         if (!response.status.isSuccess()) {
             throw ApiException(parseError(response.bodyAsText()))
@@ -218,12 +220,7 @@ class GuruApi(private val tokenStore: TokenStore) {
                 setBody(ForgotPasswordRequest(email.trim()))
             }
         } catch (e: Exception) {
-            if (e is SocketTimeoutException || e is HttpRequestTimeoutException ||
-                e.message?.contains("connect", ignoreCase = true) == true
-            ) {
-                throw ApiException(connectionErrorMessage())
-            }
-            throw ApiException(e.message ?: "Request failed")
+            throw mapNetworkError(e, "Request failed")
         }
         if (!response.status.isSuccess()) {
             throw ApiException(parseError(response.bodyAsText()))
@@ -235,12 +232,7 @@ class GuruApi(private val tokenStore: TokenStore) {
         val response = try {
             client.post("/api/auth/register-company") { setBody(body) }
         } catch (e: Exception) {
-            if (e is SocketTimeoutException || e is HttpRequestTimeoutException ||
-                e.message?.contains("connect", ignoreCase = true) == true
-            ) {
-                throw ApiException(connectionErrorMessage())
-            }
-            throw ApiException(e.message ?: "Registration failed")
+            throw mapNetworkError(e, "Registration failed")
         }
         if (!response.status.isSuccess()) {
             throw ApiException(parseError(response.bodyAsText()))

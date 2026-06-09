@@ -7,7 +7,7 @@ const prisma = require('../config/prisma');
 const { authMiddleware, roleGuard } = require('../middleware/auth');
 const { tenantMiddleware } = require('../middleware/tenant');
 const { buildPasswordResetUrl } = require('../config/frontendUrl');
-const { sendPasswordResetEmail, isSmtpConfigured } = require('../services/emailService');
+const { sendPasswordResetEmail, isEmailConfigured } = require('../services/emailService');
 const { verifyGoogleToken } = require('../services/googleAuthService');
 const { slugify } = require('../services/tenantService');
 const { companyAddressSchema } = require('../schemas/companyAddress');
@@ -227,10 +227,10 @@ router.post('/forgot-password', async (req, res, next) => {
         data: { userId: user.id, token: tokenHash, expiresAt },
       });
 
-      if (!isSmtpConfigured()) {
-        console.error('Password reset requested but SMTP is not configured on the server.');
+      if (!isEmailConfigured()) {
+        console.error('Password reset requested but email is not configured on the server.');
         return res.status(503).json({
-          error: 'Password reset email is not available yet. Ask your admin to configure SMTP, or use npm run reset-password on the server.',
+          error: 'Password reset email is not available yet. Ask your admin to configure RESEND_API_KEY or SMTP on the server.',
         });
       }
 
@@ -240,8 +240,11 @@ router.post('/forgot-password', async (req, res, next) => {
         await sendPasswordResetEmail(user.email, resetUrl);
       } catch (emailErr) {
         console.error('Failed to send reset email:', emailErr.message);
+        const timedOut = /timed out/i.test(emailErr.message);
         return res.status(503).json({
-          error: 'Unable to send reset email. Check SMTP host, port, and app password on the server.',
+          error: timedOut
+            ? 'Email server timed out. Ask your admin to set RESEND_API_KEY on Render (recommended) or fix Gmail SMTP.'
+            : 'Unable to send reset email. Check SMTP or Resend configuration on the server.',
         });
       }
     }

@@ -50,19 +50,26 @@ Click **Advanced** → **Add Environment Variable**:
 | `NODE_ENV` | `production` |
 | `NOMINATIM_USER_AGENT` | `GuruCRM/1.0 (admin@crm.com)` |
 
-### Password reset (SMTP) — required for forgot-password
+### Password reset email — required for forgot-password
+
+**Recommended: [Resend](https://resend.com)** (HTTP API — works reliably on Render; Gmail SMTP often hangs from cloud hosts).
+
+| Key | Value |
+|-----|--------|
+| `RESEND_API_KEY` | `re_...` from Resend dashboard |
+| `RESEND_FROM` | `Guru CRM <onboarding@resend.dev>` (testing) or your verified domain |
+
+**Alternative: Gmail SMTP** (may timeout from Render):
 
 | Key | Value |
 |-----|--------|
 | `SMTP_HOST` | `smtp.gmail.com` |
 | `SMTP_PORT` | `587` |
-| `SMTP_USER` | Your Gmail (e.g. `you@gmail.com`) |
-| `SMTP_PASS` | Gmail **App password** (16 chars) — not your login password |
+| `SMTP_USER` | Your Gmail |
+| `SMTP_PASS` | Gmail **App password** (16 chars) |
 | `SMTP_FROM` | `Guru CRM <you@gmail.com>` |
 
-**Gmail app password:** [Google Account](https://myaccount.google.com/) → Security → 2-Step Verification → App passwords → Mail.
-
-After adding vars, **Manual Deploy** the service. Test: `npm run test-smtp -- you@gmail.com` (from `crm-app/backend` with same vars in `.env`).
+After adding vars, **Manual Deploy** the service.
 
 Do **not** commit `DATABASE_URL` or `SMTP_PASS` to GitHub — paste only in Render.
 
