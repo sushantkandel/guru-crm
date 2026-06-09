@@ -1,0 +1,38 @@
+{
+  "syncedAt": "2026-06-09T05:36:50.859Z",
+  "source": "https://media.githubusercontent.com/media/SaugatPdl/nepal-administrative-boundary-shapefiles/main/Ward",
+  "sourceType": "saugatpdl-shapefile",
+  "stats": {
+    "wardsInSource": 6803,
+    "wardsIndexed": 6538,
+    "municipalitiesMatched": 719,
+    "municipalitiesUnmatched": 52,
+    "unmatchedSamples": [
+      "BAJHANG / Khaptad National Park (National Park)",
+      "BAJURA / Chhededaha (Gaunpalika)",
+      "BAJURA / Swami Kartik (Gaunpalika)",
+      "BAJURA / Pandav Gupha (Gaunpalika)",
+      "BAJURA / Khaptad National Park (National Park)",
+      "DHANKUTA / Khalsa Chhintang Shahidbhumi (Gaunpalika)",
+      "DOTI / Bogtan (Gaunpalika)",
+      "DOTI / Khaptad National Park (National Park)",
+      "JAJARKOT / Tribeni Nalagad (Nagarpalika)",
+      "KHOTANG / Rupakot Majhuwagadhi (Nagarpalika)",
+      "KHOTANG / Diprung (Gaunpalika)",
+      "KHOTANG / Lamidanda (Gaunpalika)",
+      "MANANG / Neshyang (Gaunpalika)",
+      "MANANG / Narphu (Gaunpalika)",
+      "MYAGDI / Dhorpatan Hunting Reserve (Hunting Reserve)",
+      "RUKUM_E / Dhorpatan Hunting Reserve (Hunting Reserve)",
+      "SALYAN / Kumakhmalika (Gaunpalika)",
+      "SALYAN / Dhorchaur (Gaunpalika)",
+      "SOLUKHUMBU / Dudhkaushika (Gaunpalika)",
+      "SOLUKHUMBU / Dudhkoshi (Gaunpalika)",
+      "TAPLEJUNG / Yangwarak (Gaunpalika)",
+      "CHITAWAN / Chitawan National Park (National Park)",
+      "MAKAWANPUR / Chitawan National Park (National Park)",
+      "MAKAWANPUR / Parsa Wildlife Reserve (Wildlife Reserve)",
+      "ACHHAM / Khaptad National Park (National Park)"
+    ]
+  }
+}

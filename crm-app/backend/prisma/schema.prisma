@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                 String              @id @default(uuid())
+  name               String
+  slug               String              @unique
+  phone              String?
+  country            String              @default("Nepal")
+  province           String
+  district           String
+  municipality       String
+  street             String
+  createdAt          DateTime            @default(now()) @map("created_at")
+  users              User[]
+  customers          Customer[]
+  orders             Order[]
+  payments           Payment[]
+  products           Product[]
+  deleteRequests     DeleteRequest[]
+
+  @@map("companies")
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  companyId           String               @map("company_id")
+  name                String
+  email               String               @unique
+  passwordHash        String?              @map("password_hash")
+  googleId            String?              @unique @map("google_id")
+  authProvider        String               @default("local") @map("auth_provider")
+  role                String               @default("staff")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  company             Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customers           Customer[]           @relation("AssignedCustomers")
+  customersCreated    Customer[]           @relation("CustomerCreatedBy")
+  customersUpdated    Customer[]           @relation("CustomerUpdatedBy")
+  orders              Order[]              @relation("CreatedOrders")
+  ordersUpdated       Order[]              @relation("UpdatedOrders")
+  paymentsCreated     Payment[]            @relation("PaymentCreatedBy")
+  paymentsUpdated     Payment[]            @relation("PaymentUpdatedBy")
+  passwordResetTokens PasswordResetToken[]
+  deleteRequests      DeleteRequest[]      @relation("DeleteRequestedBy")
+  reviewedRequests    DeleteRequest[]      @relation("DeleteReviewedBy")
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model Product {
+  id           String      @id @default(uuid())
+  companyId    String      @map("company_id")
+  name         String
+  productCode  String?     @map("product_code")
+  defaultUnit  String      @map("default_unit")
+  defaultPrice Float       @map("default_price")
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+
+  @@unique([companyId, name])
+  @@map("products")
+}
+
+model Customer {
+  id             String    @id @default(uuid())
+  companyId      String    @map("company_id")
+  name           String
+  phone          String
+  email          String?
+  shopName       String    @map("shop_name")
+  panVatNumber   String?   @map("pan_vat_number")
+  businessStatus String    @default("just_visited") @map("business_status")
+  assignedTo     String?   @map("assigned_to")
+  createdBy      String?   @map("created_by")
+  updatedBy      String?   @map("updated_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  company        Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignee       User?     @relation("AssignedCustomers", fields: [assignedTo], references: [id])
+  creator        User?     @relation("CustomerCreatedBy", fields: [createdBy], references: [id])
+  updater        User?     @relation("CustomerUpdatedBy", fields: [updatedBy], references: [id])
+  addresses      Address[]
+  orders         Order[]
+  payments       Payment[]
+
+  @@map("customers")
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  customerId   String   @map("customer_id")
+  province     String
+  district     String
+  municipality String
+  ward         String
+  street       String?
+  latitude     Float?
+  longitude    Float?
+  isPrimary    Boolean  @default(true) @map("is_primary")
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  companyId   String      @map("company_id")
+  customerId  String      @map("customer_id")
+  orderDate   DateTime    @map("order_date")
+  status      String      @default("pending")
+  totalAmount Float       @map("total_amount")
+  notes       String?
+  createdBy   String?     @map("created_by")
+  updatedBy   String?     @map("updated_by")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  creator     User?       @relation("CreatedOrders", fields: [createdBy], references: [id])
+  updater     User?       @relation("UpdatedOrders", fields: [updatedBy], references: [id])
+  items       OrderItem[]
+  payments    Payment[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  productId   String?  @map("product_id")
+  productName String   @map("product_name")
+  quantity    Float
+  unit        String
+  unitPrice   Float    @map("unit_price")
+  lineTotal   Float    @map("line_total")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id            String    @id @default(uuid())
+  companyId     String    @map("company_id")
+  orderId       String?   @map("order_id")
+  customerId    String    @map("customer_id")
+  paymentType   String    @map("payment_type")
+  amount        Float
+  paymentDate   DateTime  @map("payment_date")
+  status        String    @default("completed")
+  chequeNumber  String?   @map("cheque_number")
+  bankName      String?   @map("bank_name")
+  qrReference   String?   @map("qr_reference")
+  qrProvider    String?   @map("qr_provider")
+  creditDueDate DateTime? @map("credit_due_date")
+  createdBy     String?   @map("created_by")
+  updatedBy     String?   @map("updated_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order         Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  customer      Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  creator       User?     @relation("PaymentCreatedBy", fields: [createdBy], references: [id])
+  updater       User?     @relation("PaymentUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@map("payments")
+}
+
+model DeleteRequest {
+  id           String    @id @default(uuid())
+  companyId    String    @map("company_id")
+  entityType   String    @map("entity_type")
+  entityId     String    @map("entity_id")
+  reason       String?
+  status       String    @default("pending")
+  requestedBy  String    @map("requested_by")
+  reviewedBy   String?   @map("reviewed_by")
+  reviewNote   String?   @map("review_note")
+  reviewedAt   DateTime? @map("reviewed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requester    User      @relation("DeleteRequestedBy", fields: [requestedBy], references: [id])
+  reviewer     User?     @relation("DeleteReviewedBy", fields: [reviewedBy], references: [id])
+
+  @@map("delete_requests")
+}
+

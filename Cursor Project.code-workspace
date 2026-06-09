@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+      "name": "Shop CRM",
+      "path": "crm-app"
+    }
+  ],
+  "settings": {
+    "git.autoRepositoryDetection": true
+  }
+}

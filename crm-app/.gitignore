@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+frontend/dist/
+
+# Environment secrets (keep .env.example files)
+.env
+.env.local
+backend/.env
+frontend/.env
+
+# SQLite database
+*.db
+*.db-journal
+backend/prisma/dev.db
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*

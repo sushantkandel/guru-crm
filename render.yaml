@@ -1,0 +1,23 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# 1. Create a Neon PostgreSQL database and copy DATABASE_URL
+# 2. In Render: New > Blueprint > connect this GitHub repo
+# 3. Set FRONTEND_URL to your GitHub Pages URL after first frontend deploy
+services:
+  - type: web
+    name: guru-crm-api
+    runtime: node
+    rootDir: crm-app/backend
+    buildCommand: npm install && npm run db:migrate:deploy && npm run db:seed
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: NOMINATIM_USER_AGENT
+        value: GuruCRM/1.0 (contact@gurucrm.example.com)
