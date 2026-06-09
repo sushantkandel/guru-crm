@@ -13,6 +13,7 @@
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
     "reset-password": "node scripts/reset-password.js",
+    "change-user-email": "node scripts/change-user-email.js",
     "test-smtp": "node scripts/test-smtp.js",
     "test-email": "node scripts/test-email.js",
     "db:clear": "node scripts/clear-database.js",

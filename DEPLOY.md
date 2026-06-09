@@ -74,26 +74,22 @@ Optional variable (`Settings → Variables`):
 
 5. Update Render `FRONTEND_URL` to `https://YOUR_USER.github.io/guru-crm` (include repo path) and redeploy API (for password-reset links / CORS).
 
-### Password reset email (SMTP on Render)
+### Password reset email (Brevo on Render)
 
-Forgot-password needs SMTP on the **API** service. Without it, reset emails cannot be sent.
-
-1. **Gmail (easiest):** Google Account → Security → 2-Step Verification ON → **App passwords** → create one for Mail.
-2. Render → **guru-crm-api** → **Environment** → add:
+Forgot-password uses **Brevo SMTP** on the API service. See **[BREVO_SETUP.md](BREVO_SETUP.md)** for full steps.
 
 | Key | Value |
 |-----|--------|
-| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_HOST` | `smtp-relay.brevo.com` |
 | `SMTP_PORT` | `587` |
-| `SMTP_USER` | your Gmail address |
-| `SMTP_PASS` | 16-character app password (not your normal Gmail password) |
-| `SMTP_FROM` | `Guru CRM <your@gmail.com>` |
+| `SMTP_USER` | Brevo account email |
+| `SMTP_PASS` | Brevo SMTP key |
+| `SMTP_FROM` | `Guru CRM <verified-sender@gmail.com>` |
 | `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` |
 
-3. **Save** and **Manual Deploy** the API.
-4. Test locally: `cd crm-app/backend && npm run test-smtp -- your@gmail.com`
+Remove `RESEND_API_KEY` on Render if switching from Resend. **Manual Deploy** after saving.
 
-**Without SMTP:** reset password from terminal: `npm run reset-password -- admin@crm.com NewPass123`
+**Without email:** `npm run reset-password -- admin@crm.com NewPass123`
 
 ### Google sign-in (production)
 

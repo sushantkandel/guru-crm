@@ -116,7 +116,7 @@ async function sendViaResend(to, resetUrl) {
     }
     if (hint.includes('only send') || hint.includes('testing') || hint.includes('verify a domain')) {
       throw new Error(
-        'Resend free tier can only email your Resend signup address until you verify a domain. Use that email for testing, or run: npm run reset-password',
+        `Resend rejected this recipient. Free tier only allows your Resend account email (check resend.com → profile). Detail: ${detail}`,
       );
     }
     if (hint.includes('from') || hint.includes('sender')) {
@@ -129,28 +129,31 @@ async function sendViaResend(to, resetUrl) {
 async function sendPasswordResetEmail(to, resetUrl) {
   const content = buildResetMailContent(resetUrl);
 
+  // Prefer SMTP (Brevo, etc.) — works for any recipient on free tier
+  const transport = getTransporter();
+  if (transport) {
+    const from = env('SMTP_FROM') || env('SMTP_USER');
+    await withTimeout(
+      transport.sendMail({
+        from,
+        to,
+        subject: content.subject,
+        html: content.html,
+        text: content.text,
+      }),
+      SMTP_SEND_TIMEOUT_MS,
+      'SMTP server timed out. Check Brevo SMTP key and sender verification.',
+    );
+    return;
+  }
+
   if (env('RESEND_API_KEY')) {
     await sendViaResend(to, resetUrl);
     return;
   }
 
-  const transport = getTransporter();
-  if (!transport) {
-    throw new Error('SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS on the server.');
-  }
-
-  const from = env('SMTP_FROM') || env('SMTP_USER');
-
-  await withTimeout(
-    transport.sendMail({
-      from,
-      to,
-      subject: content.subject,
-      html: content.html,
-      text: content.text,
-    }),
-    SMTP_SEND_TIMEOUT_MS,
-    'SMTP server timed out. Gmail SMTP may be blocked from this host — try Resend (RESEND_API_KEY) instead.',
+  throw new Error(
+    'Email is not configured. Set Brevo SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS) on the server.',
   );
 }
 
@@ -159,8 +162,12 @@ function isEmailConfigured() {
 }
 
 function getEmailProvider() {
+  if (isSmtpConfigured()) {
+    const host = env('SMTP_HOST') || '';
+    if (host.includes('brevo.com')) return 'brevo';
+    return 'smtp';
+  }
   if (env('RESEND_API_KEY')) return 'resend';
-  if (isSmtpConfigured()) return 'smtp';
   return 'none';
 }
 

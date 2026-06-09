@@ -52,24 +52,19 @@ Click **Advanced** → **Add Environment Variable**:
 
 ### Password reset email — required for forgot-password
 
-**Recommended: [Resend](https://resend.com)** (HTTP API — works reliably on Render; Gmail SMTP often hangs from cloud hosts).
+**Recommended: [Brevo](https://www.brevo.com)** (free ~300/day, sends to any Gmail). Full steps: **[BREVO_SETUP.md](BREVO_SETUP.md)**
 
 | Key | Value |
 |-----|--------|
-| `RESEND_API_KEY` | `re_...` from Resend dashboard |
-| `RESEND_FROM` | `Guru CRM <onboarding@resend.dev>` (testing) or your verified domain |
-
-**Alternative: Gmail SMTP** (may timeout from Render):
-
-| Key | Value |
-|-----|--------|
-| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_HOST` | `smtp-relay.brevo.com` |
 | `SMTP_PORT` | `587` |
-| `SMTP_USER` | Your Gmail |
-| `SMTP_PASS` | Gmail **App password** (16 chars) |
-| `SMTP_FROM` | `Guru CRM <you@gmail.com>` |
+| `SMTP_USER` | Your Brevo login email |
+| `SMTP_PASS` | Brevo **SMTP key** (from SMTP & API → SMTP) |
+| `SMTP_FROM` | `Guru CRM <your-verified@gmail.com>` |
 
-After adding vars, **Manual Deploy** the service.
+Remove `RESEND_API_KEY` if you used Resend before.
+
+After adding vars, **Manual Deploy** the service. Check: `/api/health` → `"emailProvider":"brevo"`.
 
 Do **not** commit `DATABASE_URL` or `SMTP_PASS` to GitHub — paste only in Render.
 

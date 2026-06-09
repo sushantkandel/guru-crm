@@ -63,20 +63,20 @@ Address geocoding uses the free [Nominatim](https://nominatim.org/) service. Opt
 NOMINATIM_USER_AGENT=GuruCRM/1.0 (your-contact@email.com)
 ```
 
-## SMTP (for password reset)
+## Email (password reset via Brevo)
 
-Add to `backend/.env`:
+See **[BREVO_SETUP.md](../BREVO_SETUP.md)** in the repo root. Add to `backend/.env`:
 
 ```
-SMTP_HOST=smtp.gmail.com
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM="Guru CRM <noreply@yourdomain.com>"
+SMTP_USER=your-brevo-login@email.com
+SMTP_PASS=your-brevo-smtp-key
+SMTP_FROM="Guru CRM <verified-sender@gmail.com>"
 FRONTEND_URL=http://localhost:5173
 ```
 
-For Gmail, use an [App Password](https://support.google.com/accounts/answer/185833).
+Test: `npm run test-email -- recipient@example.com`
 
 ## Google Sign-In (Login with Gmail)
 
