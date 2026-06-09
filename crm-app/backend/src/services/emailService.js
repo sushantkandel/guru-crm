@@ -35,24 +35,41 @@ function brevoApiKeyFormatOk() {
   return key.startsWith('xkeysib-');
 }
 
-function formatBrevoApiError(status, detail) {
+function isBrevoIpBlockError(status, detail) {
   const hint = String(detail).toLowerCase();
-
-  if (
+  return (
     hint.includes('ip not authorized') ||
     hint.includes('not verified') ||
     hint.includes('validate your ip') ||
-    (status === 401 && hint.includes('unauthorized') && !hint.includes('api key'))
-  ) {
-    return (
-      'Brevo blocked this request from Render (IP not authorized). ' +
-      'Check the Brevo account inbox for "Validate your IP address" and click the link, ' +
-      'or add Render outbound IPs: Render → guru-crm-api → Connect → Outbound, ' +
-      'then Brevo → Security → Authorized IPs. See BREVO_SETUP.md.'
-    );
+    hint.includes('ip address') ||
+    (status === 401 && hint.includes('unauthorized'))
+  );
+}
+
+function brevoIpBlockMessage() {
+  return (
+    'Brevo blocked this request from Render (IP not authorized). ' +
+    'Check the Brevo account inbox for "Validate your IP address" and click the link, ' +
+    'or add Render outbound IPs: Render → guru-crm-api → Connect → Outbound, ' +
+    'then Brevo → Security → Authorized IPs. Or disable "Block unknown IP addresses" in Brevo Security.'
+  );
+}
+
+function formatBrevoApiError(status, detail) {
+  const hint = String(detail).toLowerCase();
+
+  if (isBrevoIpBlockError(status, detail)) {
+    return brevoIpBlockMessage();
   }
 
   if (status === 401 || hint.includes('api key') || hint.includes('key not found')) {
+    if (brevoApiKeyFormatOk()) {
+      return (
+        'Brevo rejected the API key (format is xkeysib-, so this is usually an IP block or a revoked key). ' +
+        '1) Brevo → Security → authorize Render outbound IPs or disable IP blocking. ' +
+        '2) Brevo → API keys → generate a new key → update BREVO_API_KEY on Render → redeploy.'
+      );
+    }
     return (
       'Brevo API key rejected. Use a key from Brevo → SMTP & API → API keys (starts with xkeysib-), ' +
       'not the SMTP key. Regenerate if needed, update BREVO_API_KEY on Render, and redeploy.'
@@ -139,34 +156,87 @@ function withTimeout(promise, ms, message) {
   ]);
 }
 
-async function sendViaBrevoApi(to, resetUrl) {
+async function brevoApiRequest(path, options = {}) {
   const apiKey = getBrevoApiKey();
   validateBrevoApiKeyFormat(apiKey);
+
+  const response = await withTimeout(
+    fetch(`https://api.brevo.com/v3${path}`, {
+      ...options,
+      headers: {
+        'api-key': apiKey,
+        Accept: 'application/json',
+        ...(options.headers || {}),
+      },
+    }),
+    EMAIL_SEND_TIMEOUT_MS,
+    'Brevo API timed out',
+  );
+
+  const body = await response.text();
+  let parsed;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    parsed = { message: body };
+  }
+
+  return { response, parsed, detail: parsed.message || parsed.code || body };
+}
+
+async function probeBrevoApi() {
+  if (!isBrevoApiConfigured()) {
+    return { configured: false, auth: 'not_configured' };
+  }
+
+  const keyFormat = brevoApiKeyFormatOk() ? 'ok' : 'invalid-use-xkeysib-api-key';
+  if (keyFormat !== 'ok') {
+    return { configured: true, keyFormat, auth: 'invalid_format' };
+  }
+
+  try {
+    const { response, parsed, detail } = await brevoApiRequest('/account');
+    if (response.ok) {
+      return {
+        configured: true,
+        keyFormat,
+        auth: 'ok',
+        brevoAccount: parsed.email || null,
+      };
+    }
+
+    if (isBrevoIpBlockError(response.status, detail)) {
+      return { configured: true, keyFormat, auth: 'ip_blocked', detail };
+    }
+
+    if (response.status === 401) {
+      return { configured: true, keyFormat, auth: 'invalid_key', detail };
+    }
+
+    return { configured: true, keyFormat, auth: 'error', status: response.status, detail };
+  } catch (err) {
+    return { configured: true, keyFormat, auth: 'error', detail: err.message };
+  }
+}
+
+async function sendViaBrevoApi(to, resetUrl) {
   const fromRaw = env('BREVO_FROM') || env('SMTP_FROM');
   const sender = parseFromAddress(fromRaw, env('SMTP_USER'));
   const content = buildResetMailContent(resetUrl);
 
-  let response;
+  let result;
   try {
-    response = await withTimeout(
-      fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'api-key': apiKey,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          sender,
-          to: [{ email: to }],
-          subject: content.subject,
-          htmlContent: content.html,
-          textContent: content.text,
-        }),
+    result = await brevoApiRequest('/smtp/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender,
+        to: [{ email: to }],
+        subject: content.subject,
+        htmlContent: content.html,
+        textContent: content.text,
       }),
-      EMAIL_SEND_TIMEOUT_MS,
-      'Brevo API timed out',
-    );
+    });
   } catch (err) {
     const msg = err.message || '';
     if (/timed out/i.test(msg)) {
@@ -175,16 +245,8 @@ async function sendViaBrevoApi(to, resetUrl) {
     throw new Error(`Brevo request failed: ${msg}`);
   }
 
+  const { response, detail } = result;
   if (!response.ok) {
-    const body = await response.text();
-    let detail = body;
-    try {
-      const parsed = JSON.parse(body);
-      detail = parsed.message || parsed.error || body;
-    } catch {
-      // keep raw body
-    }
-
     const hint = String(detail).toLowerCase();
     if (hint.includes('sender') && !hint.includes('ip')) {
       throw new Error(
@@ -312,4 +374,5 @@ module.exports = {
   isEmailConfigured,
   getEmailProvider,
   brevoApiKeyFormatOk,
+  probeBrevoApi,
 };

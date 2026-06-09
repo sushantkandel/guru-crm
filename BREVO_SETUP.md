@@ -97,7 +97,7 @@ Open **Render** → **guru-crm-api** → **Environment**.
 |-----|--------|
 | `BREVO_API_KEY` | `xkeysib-...` from step 3 |
 | `BREVO_FROM` | `Guru CRM <peaceandray@gmail.com>` (verified sender) |
-| `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` |
+| `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` (must include `/guru-crm`) |
 
 **Save** → **Manual Deploy** → **Deploy latest commit**
 
@@ -145,5 +145,6 @@ On Render, always use `BREVO_API_KEY` instead.
 | `brevoKeyFormat: invalid-use-xkeysib-api-key` | `BREVO_API_KEY` is not an API key — regenerate on **API keys** tab |
 | Sender not verified | Complete Brevo sender verification |
 | SMTP account not activated | Email **contact@brevo.com** — see step **1b** (wait 1–2 days) |
+| Reset link → GitHub 404 | Set `FRONTEND_URL` to `https://sushantkandel.github.io/guru-crm` on Render (include `/guru-crm`) |
 
 **No email yet:** `npm run reset-password -- user@email.com NewPass123`
