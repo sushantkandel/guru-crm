@@ -11,8 +11,7 @@ const { tenantMiddleware } = require('../middleware/tenant');
 
 const router = express.Router();
 
-router.use(authMiddleware, tenantMiddleware);
-
+// Public read-only — used on register-company before the user has a token
 router.get('/nepal', (req, res, next) => {
   try {
     const { province, district, municipality } = req.query;
@@ -31,6 +30,8 @@ router.get('/nepal', (req, res, next) => {
     next(err);
   }
 });
+
+router.use(authMiddleware, tenantMiddleware);
 
 router.get('/nepal/meta', (req, res, next) => {
   try {

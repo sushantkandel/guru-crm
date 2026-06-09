@@ -46,7 +46,11 @@ export default function RegisterCompany() {
       await registerCompany(form);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed');
+      const details = err.response?.data?.details;
+      const detailMsg = Array.isArray(details)
+        ? details.map((d) => d.message).filter(Boolean).join('. ')
+        : '';
+      setError(detailMsg || err.response?.data?.error || err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

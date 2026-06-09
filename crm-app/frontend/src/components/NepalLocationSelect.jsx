@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { formLabel, formInput } from '../utils/formStyles';
+import { formLabel, formSelect } from '../utils/formStyles';
 
 const emptyLoc = { province: '', district: '', municipality: '', ward: '' };
 
@@ -17,9 +17,16 @@ export default function NepalLocationSelect({
   const [districts, setDistricts] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
   const [wards, setWards] = useState([]);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    api.get('/locations/nepal').then((res) => setProvinces(res.data.provinces || []));
+    api
+      .get('/locations/nepal')
+      .then((res) => {
+        setProvinces(res.data.provinces || []);
+        setLoadError('');
+      })
+      .catch(() => setLoadError('Could not load Nepal locations. Refresh the page or try again later.'));
   }, []);
 
   useEffect(() => {
@@ -54,10 +61,11 @@ export default function NepalLocationSelect({
 
   return (
     <div className={`${gridClass} ${className}`}>
+      {loadError && <p className="col-span-full text-sm text-red-600">{loadError}</p>}
       <div>
         <label className={formLabel}>Province *</label>
         <select
-          className={formInput}
+          className={formSelect}
           value={province}
           onChange={(e) => onChange({ ...emptyLoc, province: e.target.value })}
           required
@@ -71,7 +79,7 @@ export default function NepalLocationSelect({
       <div>
         <label className={formLabel}>District *</label>
         <select
-          className={formInput}
+          className={formSelect}
           value={district}
           disabled={!province}
           onChange={(e) => onChange({ province, district: e.target.value, municipality: '', ward: '' })}
@@ -86,7 +94,7 @@ export default function NepalLocationSelect({
       <div>
         <label className={formLabel}>Municipality *</label>
         <select
-          className={formInput}
+          className={formSelect}
           value={municipality}
           disabled={!district}
           onChange={(e) => onChange({ province, district, municipality: e.target.value, ward: '' })}
@@ -102,7 +110,7 @@ export default function NepalLocationSelect({
         <div>
           <label className={formLabel}>Ward *</label>
           <select
-            className={formInput}
+            className={formSelect}
             value={ward}
             disabled={!municipality}
             onChange={(e) => onChange({ province, district, municipality, ward: e.target.value })}

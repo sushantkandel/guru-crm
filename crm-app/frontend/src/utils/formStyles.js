@@ -6,6 +6,8 @@ export const formTitle = 'form-title';
 export const formSubtitle = 'form-subtitle';
 export const formLabel = 'form-label';
 export const formInput = 'form-input';
+/** Use on &lt;select&gt; — same as formInput; kept for clarity at call sites */
+export const formSelect = 'form-input form-select';
 export const formHint = 'form-hint';
 export const formCard = 'form-card';
 export const formGrid2 = 'form-grid-2';

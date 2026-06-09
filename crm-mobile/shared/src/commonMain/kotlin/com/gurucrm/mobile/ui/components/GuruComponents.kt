@@ -44,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -155,22 +156,32 @@ fun GuruPickerField(
     enabled: Boolean = true,
 ) {
     OutlinedTextField(
-        value = value.ifBlank { placeholder },
+        value = value,
         onValueChange = {},
         readOnly = true,
         enabled = enabled,
         label = { Text(label) },
+        placeholder = { Text(placeholder) },
         modifier = modifier
             .fillMaxWidth()
             .clickable(enabled) { onOpenPicker() },
         trailingIcon = {
-            GuruDropdownIcon(
-                onClick = onOpenPicker,
-                enabled = enabled,
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "Select $label",
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable(enabled) { onOpenPicker() },
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         shape = RoundedCornerShape(8.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+            disabledBorderColor = MaterialTheme.colorScheme.outline,
+            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
     )
 }
 
