@@ -17,8 +17,8 @@ import {
 import { APP_NAME } from '../config/branding';
 
 export default function Login() {
-  const [email, setEmail] = useState('admin@crm.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -94,9 +94,6 @@ export default function Login() {
         </p>
         <p className="mt-2 text-center text-sm sm:text-base">
           <Link to="/register-company" className="text-blue-600 hover:underline">Create your company</Link>
-        </p>
-        <p className="mt-2 text-sm text-slate-400 text-center leading-relaxed">
-          Demo: admin@crm.com / admin123 (owner) · sales@crm.com / sales123 (staff)
         </p>
       </div>
     </div>
