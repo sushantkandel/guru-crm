@@ -240,11 +240,10 @@ router.post('/forgot-password', async (req, res, next) => {
         await sendPasswordResetEmail(user.email, resetUrl);
       } catch (emailErr) {
         console.error('Failed to send reset email:', emailErr.message);
-        const timedOut = /timed out/i.test(emailErr.message);
         return res.status(503).json({
-          error: timedOut
-            ? 'Email server timed out. Ask your admin to set RESEND_API_KEY on Render (recommended) or fix Gmail SMTP.'
-            : 'Unable to send reset email. Check SMTP or Resend configuration on the server.',
+          error:
+            emailErr.message ||
+            'Unable to send reset email. Check SMTP or Resend configuration on the server.',
         });
       }
     }

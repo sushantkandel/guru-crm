@@ -3,9 +3,15 @@ const { APP_NAME } = require('../config/branding');
 
 let transporter = null;
 
+/** Trim whitespace and optional quotes from Render / .env values */
+function env(key) {
+  const raw = process.env[key];
+  if (raw == null || raw === '') return undefined;
+  return raw.trim().replace(/^["']|["']$/g, '');
+}
+
 function isSmtpConfigured() {
-  const { SMTP_HOST, SMTP_USER, SMTP_PASS } = process.env;
-  return Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
+  return Boolean(env('SMTP_HOST') && env('SMTP_USER') && env('SMTP_PASS'));
 }
 
 function getTransporter() {
@@ -15,17 +21,17 @@ function getTransporter() {
     return null;
   }
 
-  const port = Number(process.env.SMTP_PORT) || 587;
+  const port = Number(env('SMTP_PORT')) || 587;
   const secure =
-    process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || port === 465;
+    env('SMTP_SECURE') === 'true' || env('SMTP_SECURE') === '1' || port === 465;
 
   transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host: env('SMTP_HOST'),
     port,
     secure,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: env('SMTP_USER'),
+      pass: env('SMTP_PASS'),
     },
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
@@ -62,39 +68,68 @@ function withTimeout(promise, ms, message) {
 }
 
 async function sendViaResend(to, resetUrl) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM || process.env.SMTP_FROM || `Guru CRM <onboarding@resend.dev>`;
+  const apiKey = env('RESEND_API_KEY');
+  if (!apiKey?.startsWith('re_')) {
+    throw new Error('RESEND_API_KEY must start with re_. Check the key on Render (no quotes or spaces).');
+  }
+
+  const from = env('RESEND_FROM') || `Guru CRM <onboarding@resend.dev>`;
   const content = buildResetMailContent(resetUrl);
 
-  const response = await withTimeout(
-    fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject: content.subject,
-        html: content.html,
-        text: content.text,
+  let response;
+  try {
+    response = await withTimeout(
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject: content.subject,
+          html: content.html,
+          text: content.text,
+        }),
       }),
-    }),
-    SMTP_SEND_TIMEOUT_MS,
-    'Email API timed out',
-  );
+      SMTP_SEND_TIMEOUT_MS,
+      'Resend API timed out',
+    );
+  } catch (err) {
+    throw new Error(`Resend request failed: ${err.message}`);
+  }
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Email API failed (${response.status}): ${body}`);
+    let detail = body;
+    try {
+      const parsed = JSON.parse(body);
+      detail = parsed.message || parsed.error || body;
+    } catch {
+      // keep raw body
+    }
+
+    const hint = String(detail).toLowerCase();
+    if (hint.includes('api key') || response.status === 401) {
+      throw new Error('Resend API key is invalid. Check RESEND_API_KEY on Render.');
+    }
+    if (hint.includes('only send') || hint.includes('testing') || hint.includes('verify a domain')) {
+      throw new Error(
+        'Resend free tier can only email your Resend signup address until you verify a domain. Use that email for testing, or run: npm run reset-password',
+      );
+    }
+    if (hint.includes('from') || hint.includes('sender')) {
+      throw new Error('Invalid RESEND_FROM address. Use: Guru CRM <onboarding@resend.dev>');
+    }
+    throw new Error(`Resend error: ${detail}`);
   }
 }
 
 async function sendPasswordResetEmail(to, resetUrl) {
   const content = buildResetMailContent(resetUrl);
 
-  if (process.env.RESEND_API_KEY) {
+  if (env('RESEND_API_KEY')) {
     await sendViaResend(to, resetUrl);
     return;
   }
@@ -104,7 +139,7 @@ async function sendPasswordResetEmail(to, resetUrl) {
     throw new Error('SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS on the server.');
   }
 
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const from = env('SMTP_FROM') || env('SMTP_USER');
 
   await withTimeout(
     transport.sendMail({
@@ -120,7 +155,13 @@ async function sendPasswordResetEmail(to, resetUrl) {
 }
 
 function isEmailConfigured() {
-  return isSmtpConfigured() || Boolean(process.env.RESEND_API_KEY);
+  return isSmtpConfigured() || Boolean(env('RESEND_API_KEY'));
+}
+
+function getEmailProvider() {
+  if (env('RESEND_API_KEY')) return 'resend';
+  if (isSmtpConfigured()) return 'smtp';
+  return 'none';
 }
 
 module.exports = {
@@ -128,4 +169,5 @@ module.exports = {
   getTransporter,
   isSmtpConfigured,
   isEmailConfigured,
+  getEmailProvider,
 };

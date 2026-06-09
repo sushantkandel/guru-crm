@@ -46,7 +46,11 @@ app.use(
 );
 app.use(express.json());
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+const { getEmailProvider } = require('./services/emailService');
+
+app.get('/api/health', (req, res) =>
+  res.json({ status: 'ok', emailProvider: getEmailProvider() }),
+);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
