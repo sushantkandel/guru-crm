@@ -380,8 +380,8 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
     val (bg, fg, label) = when (status.lowercase()) {
         "pending" -> Triple(Color(0xFFFEF3C7), GuruAmber, "Pending")
         "confirmed" -> Triple(Color(0xFFDBEAFE), GuruBlue, "Confirmed")
-        "delivered", "completed", "converted" -> Triple(Color(0xFFDCFCE7), GuruGreen, status.replaceFirstChar { it.uppercase() })
-        "cancelled", "bounced", "not_converted" -> Triple(Color(0xFFF1F5F9), GuruSlate, status.replaceFirstChar { it.uppercase() })
+        "delivered", "completed", "converted", "active" -> Triple(Color(0xFFDCFCE7), GuruGreen, status.replaceFirstChar { it.uppercase() })
+        "cancelled", "bounced", "not_converted", "inactive" -> Triple(Color(0xFFF1F5F9), GuruSlate, status.replaceFirstChar { it.uppercase() })
         "just_visited" -> Triple(Color(0xFFF1F5F9), GuruSlate, "Just visited")
         else -> Triple(Color(0xFFF1F5F9), GuruSlate, status.replaceFirstChar { it.uppercase() })
     }
@@ -463,7 +463,7 @@ fun ConfirmDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterChipRow(
     options: List<Pair<String, String>>,
@@ -477,9 +477,10 @@ fun FilterChipRow(
     } else {
         Modifier.padding(vertical = GuruSpacing.filterPadding)
     }
-    Row(
+    FlowRow(
         modifier = modifier.fillMaxWidth().then(rowPadding),
         horizontalArrangement = Arrangement.spacedBy(GuruSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(GuruSpacing.sm),
     ) {
         options.forEach { (value, label) ->
             val selectedChip = selected == value
@@ -494,6 +495,7 @@ fun FilterChipRow(
                     modifier = Modifier.padding(horizontal = GuruSpacing.md - GuruSpacing.xs, vertical = GuruSpacing.sm),
                     style = MaterialTheme.typography.labelMedium,
                     color = if (selectedChip) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
                 )
             }
         }

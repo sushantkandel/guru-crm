@@ -1,6 +1,7 @@
 package com.gurucrm.mobile.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Payment
@@ -39,19 +40,24 @@ import com.gurucrm.mobile.ui.OrderFormScreen
 import com.gurucrm.mobile.ui.OrdersScreen
 import com.gurucrm.mobile.ui.PaymentFormScreen
 import com.gurucrm.mobile.ui.PaymentsScreen
+import com.gurucrm.mobile.ui.ProductFormScreen
+import com.gurucrm.mobile.ui.ProductsScreen
+import com.gurucrm.mobile.util.canManageProducts
 
-private val bottomTabs = listOf(
-    TabRoute.Dashboard,
-    TabRoute.Customers,
-    TabRoute.Orders,
-    TabRoute.Payments,
-    TabRoute.Map,
-)
+private fun visibleTabsFor(user: UserDto): List<TabRoute> = buildList {
+    add(TabRoute.Dashboard)
+    add(TabRoute.Customers)
+    add(TabRoute.Orders)
+    if (user.canManageProducts()) add(TabRoute.Products)
+    add(TabRoute.Payments)
+    add(TabRoute.Map)
+}
 
 private sealed class TabRoute(val route: String, val label: String) {
     data object Dashboard : TabRoute("tab/dashboard", "Dashboard")
     data object Customers : TabRoute("tab/customers", "Customers")
     data object Orders : TabRoute("tab/orders", "Orders")
+    data object Products : TabRoute("tab/products", "Products")
     data object Payments : TabRoute("tab/payments", "Payments")
     data object Map : TabRoute("tab/map", "Map")
 }
@@ -95,7 +101,7 @@ fun AppNavHost(
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
-                    bottomTabs.forEach { tab ->
+                    visibleTabsFor(user).forEach { tab ->
                         NavigationBarItem(
                             selected = currentRoute == tab.route,
                             onClick = {
@@ -111,6 +117,7 @@ fun AppNavHost(
                                         TabRoute.Dashboard -> Icons.Default.Dashboard
                                         TabRoute.Customers -> Icons.Default.People
                                         TabRoute.Orders -> Icons.Default.ShoppingCart
+                                        TabRoute.Products -> Icons.Default.Category
                                         TabRoute.Payments -> Icons.Default.Payment
                                         TabRoute.Map -> Icons.Default.Map
                                     },
@@ -159,6 +166,16 @@ fun AppNavHost(
                         navController.navigate(route)
                     },
                 )
+            }
+            if (user.canManageProducts()) {
+                composable(TabRoute.Products.route) {
+                    ProductsScreen(
+                        api = api,
+                        user = user,
+                        onAddProduct = { navController.navigate("products/new") },
+                        onEditProduct = { navController.navigate("products/edit/$it") },
+                    )
+                }
             }
             composable(TabRoute.Payments.route) {
                 PaymentsScreen(
@@ -253,6 +270,28 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
                 )
+            }
+
+            if (user.canManageProducts()) {
+                composable("products/new") {
+                    ProductFormScreen(
+                        api = api,
+                        user = user,
+                        productId = null,
+                        onBack = { navController.popBackStack() },
+                        onSaved = { navController.popBackStack() },
+                    )
+                }
+                composable("products/edit/{id}") { entry ->
+                    val id = entry.arguments?.getString("id") ?: return@composable
+                    ProductFormScreen(
+                        api = api,
+                        user = user,
+                        productId = id,
+                        onBack = { navController.popBackStack() },
+                        onSaved = { navController.popBackStack() },
+                    )
+                }
             }
 
             composable(

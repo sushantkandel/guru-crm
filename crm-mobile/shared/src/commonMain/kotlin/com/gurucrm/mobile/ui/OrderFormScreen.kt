@@ -81,7 +81,7 @@ fun OrderFormScreen(
     LaunchedEffect(Unit) {
         runCatching {
             customers = api.customers()
-            products = api.products()
+            products = api.products(activeOnly = true)
         }
         if (orderDate.isBlank()) {
             orderDate = kotlinx.datetime.Clock.System.now().toString().take(10)

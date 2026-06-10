@@ -31,6 +31,7 @@ import com.gurucrm.mobile.data.PaymentQuery
 import com.gurucrm.mobile.data.PaymentStatusRequest
 import com.gurucrm.mobile.data.PaymentUpsertRequest
 import com.gurucrm.mobile.data.ProductDto
+import com.gurucrm.mobile.data.ProductUpsertRequest
 import com.gurucrm.mobile.data.RouteResponseDto
 import com.gurucrm.mobile.data.ShopDto
 import com.gurucrm.mobile.data.TokenStore
@@ -324,10 +325,19 @@ class GuruApi(private val tokenStore: TokenStore) {
 
     suspend fun deletePayment(id: String) = authorizedDelete("/payments/$id")
 
-    suspend fun products(activeOnly: Boolean = true): List<ProductDto> {
+    suspend fun products(activeOnly: Boolean = false): List<ProductDto> {
         val params = if (activeOnly) mapOf("active_only" to "true") else emptyMap()
         return authorizedGet("/products", params)
     }
+
+    suspend fun product(id: String): ProductDto = authorizedGet("/products/$id")
+
+    suspend fun createProduct(body: ProductUpsertRequest): ProductDto = authorizedPost("/products", body)
+
+    suspend fun updateProduct(id: String, body: ProductUpsertRequest): ProductDto =
+        authorizedPut("/products/$id", body)
+
+    suspend fun deleteProduct(id: String) = authorizedDelete("/products/$id")
 
     suspend fun payments(query: PaymentQuery = PaymentQuery()): List<PaymentDto> {
         val params = buildMap {

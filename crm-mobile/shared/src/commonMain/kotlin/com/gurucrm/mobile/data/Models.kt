@@ -157,6 +157,15 @@ data class ProductDto(
 )
 
 @Serializable
+data class ProductUpsertRequest(
+    val name: String,
+    val productCode: String? = null,
+    val defaultUnit: String,
+    val defaultPrice: Double,
+    val isActive: Boolean = true,
+)
+
+@Serializable
 data class PaymentCustomerDto(
     val id: String,
     val name: String,
