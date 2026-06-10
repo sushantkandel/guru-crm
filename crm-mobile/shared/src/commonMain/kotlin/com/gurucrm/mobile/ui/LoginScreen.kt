@@ -3,11 +3,15 @@ package com.gurucrm.mobile.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -49,86 +53,129 @@ fun LoginScreen(
     val googleSignInAvailable = remember { GoogleSignIn.isAvailable() }
 
     Column(
-        Modifier.fillMaxSize().padding(GuruSpacing.authPadding),
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .padding(GuruSpacing.authPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(GuruSpacing.lg))
-
-        AppLogo(size = 220.dp)
-        Spacer(Modifier.height(GuruSpacing.md))
-
-        Text("Field sales mobile", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-        Spacer(Modifier.height(GuruSpacing.xl))
-
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(GuruSpacing.fieldGap),
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (googleSignInAvailable) {
-                GuruOutlinedButton(
-                    text = if (googleLoading) "Signing in with Google…" else "Sign in with Google",
-                    enabled = !loading && !googleLoading,
+            Spacer(Modifier.height(GuruSpacing.lg))
+
+            AppLogo(size = 220.dp)
+            Spacer(Modifier.height(GuruSpacing.md))
+
+            Text(
+                "Field sales mobile",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.height(GuruSpacing.xl))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(GuruSpacing.fieldGap),
+            ) {
+                if (googleSignInAvailable) {
+                    GuruOutlinedButton(
+                        text = if (googleLoading) "Signing in with Google…" else "Sign in with Google",
+                        enabled = !loading && !googleLoading,
+                        onClick = {
+                            googleLoading = true
+                            error = null
+                            scope.launch {
+                                try {
+                                    val token = GoogleSignIn.signIn().getOrThrow()
+                                    val auth = api.loginWithGoogle(token)
+                                    onLoggedIn(auth.user)
+                                } catch (e: Exception) {
+                                    val message = e.message.orEmpty()
+                                    if (!message.contains("cancelled", ignoreCase = true)) {
+                                        error = message.ifBlank { "Google sign-in failed" }
+                                    }
+                                } finally {
+                                    googleLoading = false
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    RowDividerLabel()
+                }
+
+                GuruTextField(value = email, onValueChange = { email = it }, label = "Email")
+                GuruPasswordField(value = password, onValueChange = { password = it }, label = "Password")
+
+                Spacer(Modifier.height(GuruSpacing.actionGap))
+
+                error?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                GuruPrimaryButton(
+                    text = if (loading) "Signing in…" else "Sign in",
+                    enabled = !loading && !googleLoading && email.isNotBlank() && password.isNotBlank(),
                     onClick = {
-                        googleLoading = true
+                        loading = true
                         error = null
                         scope.launch {
                             try {
-                                val token = GoogleSignIn.signIn().getOrThrow()
-                                val auth = api.loginWithGoogle(token)
+                                val auth = api.login(email.trim(), password)
                                 onLoggedIn(auth.user)
                             } catch (e: Exception) {
-                                val message = e.message.orEmpty()
-                                if (!message.contains("cancelled", ignoreCase = true)) {
-                                    error = message.ifBlank { "Google sign-in failed" }
-                                }
+                                error = e.message ?: "Login failed"
                             } finally {
-                                googleLoading = false
+                                loading = false
                             }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
-
-                RowDividerLabel()
             }
+        }
 
-            GuruTextField(value = email, onValueChange = { email = it }, label = "Email")
-            GuruPasswordField(value = password, onValueChange = { password = it }, label = "Password")
+        LoginAuthFooter(
+            onForgotPassword = onForgotPassword,
+            onRegisterCompany = onRegisterCompany,
+        )
+    }
+}
 
-            // Full 24dp between last field and actions (not inside GuruFormColumn).
-            Spacer(Modifier.height(GuruSpacing.actionGap))
+@Composable
+private fun LoginAuthFooter(
+    onForgotPassword: () -> Unit,
+    onRegisterCompany: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = GuruSpacing.lg, bottom = GuruSpacing.sm),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        TextButton(
+            onClick = onForgotPassword,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(vertical = GuruSpacing.sm),
+        ) {
+            Text("Forgot password?")
+        }
 
-            error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-            }
+        Spacer(Modifier.height(GuruSpacing.md))
 
-            GuruPrimaryButton(
-                text = if (loading) "Signing in…" else "Sign in",
-                enabled = !loading && !googleLoading && email.isNotBlank() && password.isNotBlank(),
-                onClick = {
-                    loading = true
-                    error = null
-                    scope.launch {
-                        try {
-                            val auth = api.login(email.trim(), password)
-                            onLoggedIn(auth.user)
-                        } catch (e: Exception) {
-                            error = e.message ?: "Login failed"
-                        } finally {
-                            loading = false
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            TextButton(onClick = onForgotPassword, modifier = Modifier.fillMaxWidth()) {
-                Text("Forgot password?")
-            }
-            TextButton(onClick = onRegisterCompany, modifier = Modifier.fillMaxWidth()) {
-                Text("Create your company")
-            }
+        TextButton(
+            onClick = onRegisterCompany,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(vertical = GuruSpacing.sm),
+        ) {
+            Text("Create your company")
         }
     }
 }
