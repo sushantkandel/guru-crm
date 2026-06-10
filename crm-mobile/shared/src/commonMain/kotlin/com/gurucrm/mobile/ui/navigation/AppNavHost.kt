@@ -6,8 +6,10 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -16,7 +18,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,7 +37,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.UserDto
+import com.gurucrm.mobile.platform.BackupFileService
 import com.gurucrm.mobile.platform.PlatformServices
+import com.gurucrm.mobile.ui.components.AppLogo
+import com.gurucrm.mobile.ui.BackupRestoreScreen
 import com.gurucrm.mobile.ui.CustomerDetailScreen
 import com.gurucrm.mobile.ui.CustomerFormScreen
 import com.gurucrm.mobile.ui.CustomersScreen
@@ -42,7 +53,10 @@ import com.gurucrm.mobile.ui.PaymentFormScreen
 import com.gurucrm.mobile.ui.PaymentsScreen
 import com.gurucrm.mobile.ui.ProductFormScreen
 import com.gurucrm.mobile.ui.ProductsScreen
+import com.gurucrm.mobile.ui.SettingsScreen
 import com.gurucrm.mobile.util.canManageProducts
+import com.gurucrm.mobile.util.APP_NAME
+import com.gurucrm.mobile.util.isOwner
 
 private fun visibleTabsFor(user: UserDto): List<TabRoute> = buildList {
     add(TabRoute.Dashboard)
@@ -67,6 +81,7 @@ private sealed class TabRoute(val route: String, val label: String) {
 fun AppNavHost(
     api: GuruApi,
     platform: PlatformServices,
+    backupFiles: BackupFileService,
     user: UserDto,
     onLogout: () -> Unit,
 ) {
@@ -80,16 +95,25 @@ fun AppNavHost(
             if (showBottomBar) {
                 TopAppBar(
                     title = {
-                        androidx.compose.foundation.layout.Column {
-                            Text("Guru CRM", maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                user.companyName.ifBlank { user.name },
-                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AppLogo(size = 32.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text(APP_NAME, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    user.companyName.ifBlank { user.name },
+                                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     },
                     actions = {
+                        if (user.isOwner()) {
+                            IconButton(onClick = { navController.navigate("settings") }) {
+                                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            }
+                        }
                         TextButton(onClick = { api.logout(); onLogout() }) { Text("Logout") }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -317,6 +341,21 @@ fun AppNavHost(
                     initialCustomerId = null,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
+                )
+            }
+
+            composable("settings") {
+                SettingsScreen(
+                    user = user,
+                    onBack = { navController.popBackStack() },
+                    onBackupRestore = { navController.navigate("settings/backup") },
+                )
+            }
+            composable("settings/backup") {
+                BackupRestoreScreen(
+                    api = api,
+                    backupFiles = backupFiles,
+                    onBack = { navController.popBackStack() },
                 )
             }
         }

@@ -18,12 +18,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.UserDto
+import com.gurucrm.mobile.ui.components.AppLogo
 import com.gurucrm.mobile.ui.components.GuruPasswordField
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
 import com.gurucrm.mobile.ui.components.GuruTextField
 import com.gurucrm.mobile.ui.theme.GuruSpacing
+import com.gurucrm.mobile.util.APP_NAME
 import kotlinx.coroutines.launch
 
 @Composable
@@ -43,9 +46,12 @@ fun LoginScreen(
         Modifier.fillMaxSize().padding(GuruSpacing.authPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(GuruSpacing.xxl))
+        Spacer(Modifier.height(GuruSpacing.lg))
 
-        Text("Guru CRM", style = MaterialTheme.typography.headlineLarge)
+        AppLogo(size = 128.dp)
+        Spacer(Modifier.height(GuruSpacing.md))
+
+        Text(APP_NAME, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(GuruSpacing.sm))
         Text("Field sales mobile", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 

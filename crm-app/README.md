@@ -1,4 +1,4 @@
-# Guru CRM
+# Sales Guru
 
 Multi-company field-sales CRM for managing customer contacts, shop addresses, orders (packet/bundle/bag units), payments (cash/credit/cheque/QR), product catalogs, and map-based shop locations with city/ward/place filtering.
 
@@ -60,7 +60,7 @@ The map view and customer location picker use **Leaflet** + **OpenStreetMap** ti
 Address geocoding uses the free [Nominatim](https://nominatim.org/) service. Optionally set in `backend/.env`:
 
 ```
-NOMINATIM_USER_AGENT=GuruCRM/1.0 (your-contact@email.com)
+NOMINATIM_USER_AGENT=SalesGuru/1.0 (your-contact@email.com)
 ```
 
 ## Email (password reset via Brevo)
@@ -69,7 +69,7 @@ See **[BREVO_SETUP.md](../BREVO_SETUP.md)** in the repo root. Add to `backend/.e
 
 ```
 BREVO_API_KEY=xkeysib-your-api-key
-BREVO_FROM="Guru CRM <verified-sender@gmail.com>"
+BREVO_FROM="Sales Guru <verified-sender@gmail.com>"
 FRONTEND_URL=http://localhost:5173
 ```
 

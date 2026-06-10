@@ -48,7 +48,7 @@ Click **Advanced** → **Add Environment Variable**:
 | `JWT_SECRET` | Any long random string (e.g. 32+ chars) |
 | `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` |
 | `NODE_ENV` | `production` |
-| `NOMINATIM_USER_AGENT` | `GuruCRM/1.0 (admin@crm.com)` |
+| `NOMINATIM_USER_AGENT` | `SalesGuru/1.0 (admin@crm.com)` |
 
 ### Password reset email — required for forgot-password
 
@@ -57,7 +57,7 @@ Click **Advanced** → **Add Environment Variable**:
 | Key | Value |
 |-----|--------|
 | `BREVO_API_KEY` | `xkeysib-...` from Brevo → SMTP & API → **API keys** |
-| `BREVO_FROM` | `Guru CRM <your-verified@gmail.com>` |
+| `BREVO_FROM` | `Sales Guru <your-verified@gmail.com>` |
 
 Do **not** use SMTP on Render free tier (connection timeout).
 

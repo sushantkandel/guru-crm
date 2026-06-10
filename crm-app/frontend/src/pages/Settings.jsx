@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import NepalLocationSelect from '../components/NepalLocationSelect';
 import PageHeader from '../components/PageHeader';
+import BackupRestoreSection from '../components/BackupRestoreSection';
 import {
   pageShell,
   formSubtitle,
@@ -251,6 +252,8 @@ export default function Settings() {
           {syncingBoundaries ? 'Building ward chunks...' : 'Sync Ward Boundaries'}
         </button>
       </div>
+
+      <BackupRestoreSection />
     </div>
   );
 }

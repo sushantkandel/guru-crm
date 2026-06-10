@@ -28,7 +28,7 @@ async function main() {
   await transport.sendMail({
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to,
-    subject: 'Guru CRM SMTP test',
+    subject: 'Sales Guru SMTP test',
     text: 'If you received this, SMTP is working.',
   });
 

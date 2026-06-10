@@ -26,6 +26,41 @@ data class ErrorResponse(val error: String? = null)
 data class MessageResponse(val message: String = "")
 
 @Serializable
+data class BackupManifestDto(
+    val formatVersion: Int,
+    val app: String = "",
+    val companyId: String,
+    val companyName: String,
+    val companySlug: String = "",
+    val exportedAt: String,
+    val counts: Map<String, Int> = emptyMap(),
+)
+
+@Serializable
+data class BackupPreviewDto(
+    val valid: Boolean,
+    val manifest: BackupManifestDto,
+    val warnings: List<String> = emptyList(),
+    val counts: Map<String, Int> = emptyMap(),
+)
+
+@Serializable
+data class BackupRestoreCountsDto(
+    val products: Int = 0,
+    val customers: Int = 0,
+    val orders: Int = 0,
+    val payments: Int = 0,
+)
+
+@Serializable
+data class BackupRestoreResultDto(
+    val restored: Boolean,
+    val manifest: BackupManifestDto,
+    val warnings: List<String> = emptyList(),
+    val counts: BackupRestoreCountsDto,
+)
+
+@Serializable
 data class ForgotPasswordRequest(val email: String)
 
 @Serializable

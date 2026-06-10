@@ -105,7 +105,7 @@ async function nominatimSearch(query, { bounded = true } = {}) {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
-      'User-Agent': process.env.NOMINATIM_USER_AGENT || 'GuruCRM/1.0',
+      'User-Agent': process.env.NOMINATIM_USER_AGENT || 'SalesGuru/1.0',
     },
   });
 
@@ -178,7 +178,7 @@ router.get('/route', async (req, res, next) => {
       '?overview=full&geometries=geojson&steps=false';
 
     const response = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'GuruCRM/1.0' },
+      headers: { Accept: 'application/json', 'User-Agent': 'SalesGuru/1.0' },
     });
 
     if (!response.ok) {

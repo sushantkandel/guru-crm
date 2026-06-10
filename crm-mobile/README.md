@@ -1,6 +1,6 @@
-# Guru CRM Mobile
+# Sales Guru Mobile
 
-Compose Multiplatform Android + iOS app for [Guru CRM](../crm-app/).
+Compose Multiplatform Android + iOS app for [Sales Guru](../crm-app/).
 
 ## Features
 

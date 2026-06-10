@@ -13,6 +13,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const productRoutes = require('./routes/products');
 const deleteRequestRoutes = require('./routes/deleteRequests');
 const companyRoutes = require('./routes/companies');
+const backupRoutes = require('./routes/backup');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -80,6 +81,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/delete-requests', deleteRequestRoutes);
 app.use('/api/company', companyRoutes);
+app.use('/api/backup', backupRoutes);
 
 app.use(errorHandler);
 

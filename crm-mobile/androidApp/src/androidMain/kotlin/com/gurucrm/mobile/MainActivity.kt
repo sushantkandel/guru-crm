@@ -9,12 +9,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.gurucrm.mobile.platform.AndroidAppContext
+import com.gurucrm.mobile.platform.BackupFileBridge
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AndroidAppContext.context = applicationContext
         AndroidAppContext.activity = this
+        BackupFileBridge.registerPickLauncher(this)
+        BackupFileBridge.registerSaveLauncher(this)
         requestLocationIfNeeded()
         setContent {
             MainView()

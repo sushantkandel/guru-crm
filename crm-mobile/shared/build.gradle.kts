@@ -53,6 +53,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 implementation("com.russhwolf:multiplatform-settings:1.3.0")
                 implementation("com.russhwolf:multiplatform-settings-no-arg:1.3.0")
+                implementation(compose.components.resources)
             }
         }
         val androidMain by getting {
@@ -109,4 +110,9 @@ android {
     kotlin {
         jvmToolchain(17)
     }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.gurucrm.mobile.generated.resources"
 }

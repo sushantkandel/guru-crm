@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import AppLogo from './AppLogo';
 import { APP_NAME } from '../config/branding';
 
 const navItems = [
@@ -29,7 +30,10 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50">
       <aside className="w-full lg:w-60 bg-slate-900 text-white flex flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen lg:min-h-0">
         <div className="px-4 py-5 border-b border-slate-700/80">
-          <h1 className="text-lg font-bold tracking-tight">{APP_NAME}</h1>
+          <div className="flex items-center gap-3">
+            <AppLogo className="h-10 w-10 shrink-0 object-contain" />
+            <h1 className="text-lg font-bold tracking-tight">{APP_NAME}</h1>
+          </div>
           {user?.companyName && (
             <p className="text-sm text-blue-300 mt-1.5 truncate">{user.companyName}</p>
           )}

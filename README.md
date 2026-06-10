@@ -1,4 +1,4 @@
-# Guru CRM
+# Sales Guru
 
 Field-sales CRM for Nepal — customers, orders, payments, maps, and mobile app.
 

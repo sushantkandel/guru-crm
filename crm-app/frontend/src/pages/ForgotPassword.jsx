@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import AppLogo from '../components/AppLogo';
 import {
   formAuthShell,
   formAuthCard,
@@ -37,6 +38,7 @@ export default function ForgotPassword() {
   return (
     <div className={formAuthShell}>
       <div className={formAuthCard}>
+        <AppLogo />
         <h1 className={formTitle}>Forgot Password</h1>
         <p className={formSubtitle}>Enter your email to receive a reset link</p>
 

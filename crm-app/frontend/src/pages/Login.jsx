@@ -14,6 +14,7 @@ import {
   formAlertError,
   formAlertSuccess,
 } from '../utils/formStyles';
+import AppLogo from '../components/AppLogo';
 import { APP_NAME } from '../config/branding';
 
 export default function Login() {
@@ -48,6 +49,7 @@ export default function Login() {
   return (
     <div className={formAuthShell}>
       <div className={formAuthCard}>
+        <AppLogo />
         <h1 className={formTitle}>{APP_NAME}</h1>
         <p className={formSubtitle}>Sign in to manage customers, orders & payments</p>
 

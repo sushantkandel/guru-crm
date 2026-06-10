@@ -1,1 +1,1 @@
-export const APP_NAME = 'Guru CRM';
+export const APP_NAME = 'Sales Guru';

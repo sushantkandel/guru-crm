@@ -96,7 +96,7 @@ Open **Render** → **guru-crm-api** → **Environment**.
 | Key | Value |
 |-----|--------|
 | `BREVO_API_KEY` | `xkeysib-...` from step 3 |
-| `BREVO_FROM` | `Guru CRM <peaceandray@gmail.com>` (verified sender) |
+| `BREVO_FROM` | `Sales Guru <peaceandray@gmail.com>` (verified sender) |
 | `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` (must include `/guru-crm`) |
 
 **Save** → **Manual Deploy** → **Deploy latest commit**
@@ -128,7 +128,7 @@ SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_USER=your-brevo-login@email.com
 SMTP_PASS=your-brevo-smtp-key
-SMTP_FROM="Guru CRM <peaceandray@gmail.com>"
+SMTP_FROM="Sales Guru <peaceandray@gmail.com>"
 ```
 
 On Render, always use `BREVO_API_KEY` instead.

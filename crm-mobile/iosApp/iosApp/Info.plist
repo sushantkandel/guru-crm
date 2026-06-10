@@ -28,7 +28,7 @@
 		<false/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Guru CRM uses your location to plot driving routes to customer shops.</string>
+	<string>Sales Guru uses your location to plot driving routes to customer shops.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

@@ -1,4 +1,4 @@
-# Deploy Guru CRM (GitHub Pages + Render + Neon)
+# Deploy Sales Guru (GitHub Pages + Render + Neon)
 
 Public URLs after setup:
 
@@ -18,7 +18,7 @@ Works from **any network** (home, office, mobile data). No Mac or LAN IP require
 cd "/path/to/Cursor Project"
 git init
 git add .
-git commit -m "Guru CRM: web, mobile, deploy config"
+git commit -m "Sales Guru: web, mobile, deploy config"
 git branch -M main
 gh repo create guru-crm --public --source=. --remote=origin --push
 ```
@@ -81,7 +81,7 @@ Forgot-password uses **Brevo SMTP** on the API service. See **[BREVO_SETUP.md](B
 | Key | Value |
 |-----|--------|
 | `BREVO_API_KEY` | `xkeysib-...` (Brevo API key — not SMTP key) |
-| `BREVO_FROM` | `Guru CRM <verified-sender@gmail.com>` |
+| `BREVO_FROM` | `Sales Guru <verified-sender@gmail.com>` |
 | `FRONTEND_URL` | `https://sushantkandel.github.io/guru-crm` |
 
 Remove SMTP and Resend vars. SMTP is **blocked** on Render free tier. **Manual Deploy** after saving.

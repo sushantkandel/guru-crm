@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NepalLocationSelect from '../components/NepalLocationSelect';
 import PasswordInput from '../components/PasswordInput';
+import AppLogo from '../components/AppLogo';
 import {
   formAuthShell,
   formAuthCard,
@@ -59,6 +60,7 @@ export default function RegisterCompany() {
   return (
     <div className={formAuthShell}>
       <div className={`${formAuthCard} max-w-lg`}>
+        <AppLogo />
         <h1 className={formTitle}>Create Your Company</h1>
         <p className={formSubtitle}>
           Sign up as company owner (admin). You will manage staff, customers, products, and permissions.

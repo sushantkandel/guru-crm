@@ -263,7 +263,7 @@ async function sendViaResend(to, resetUrl) {
     throw new Error('RESEND_API_KEY must start with re_. Check the key on Render (no quotes or spaces).');
   }
 
-  const from = env('RESEND_FROM') || `Guru CRM <onboarding@resend.dev>`;
+  const from = env('RESEND_FROM') || `${APP_NAME} <onboarding@resend.dev>`;
   const content = buildResetMailContent(resetUrl);
 
   let response;
@@ -310,7 +310,7 @@ async function sendViaResend(to, resetUrl) {
       );
     }
     if (hint.includes('from') || hint.includes('sender')) {
-      throw new Error('Invalid RESEND_FROM address. Use: Guru CRM <onboarding@resend.dev>');
+      throw new Error(`Invalid RESEND_FROM address. Use: ${APP_NAME} <onboarding@resend.dev>`);
     }
     throw new Error(`Resend error: ${detail}`);
   }

@@ -22,4 +22,4 @@ services:
       - key: BREVO_FROM
         sync: false
       - key: NOMINATIM_USER_AGENT
-        value: GuruCRM/1.0 (admin@crm.com)
+        value: SalesGuru/1.0 (admin@crm.com)

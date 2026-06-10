@@ -2,6 +2,8 @@ package com.gurucrm.mobile.api
 
 import com.gurucrm.mobile.apiBaseUrl
 import com.gurucrm.mobile.data.AuthResponse
+import com.gurucrm.mobile.data.BackupPreviewDto
+import com.gurucrm.mobile.data.BackupRestoreResultDto
 import com.gurucrm.mobile.data.CustomerDetailDto
 import com.gurucrm.mobile.data.CustomerDto
 import com.gurucrm.mobile.data.CustomerQuery
@@ -46,6 +48,8 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.delete
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -54,6 +58,8 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.readRawBytes
+import io.ktor.http.Headers
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
@@ -375,6 +381,83 @@ class GuruApi(private val tokenStore: TokenStore) {
             query.ward?.takeIf { it.isNotBlank() }?.let { put("ward", it) }
         }
         return authorizedGet("/map/shops", params)
+    }
+
+    private fun backupFileNameFromDisposition(disposition: String?): String {
+        if (disposition.isNullOrBlank()) return "sales-guru-backup.zip"
+        val match = Regex("filename=\"?([^\";]+)\"?").find(disposition)
+        return match?.groupValues?.get(1) ?: "sales-guru-backup.zip"
+    }
+
+    suspend fun downloadBackup(): Pair<ByteArray, String> {
+        val token = tokenStore.getToken() ?: throw ApiException("Not signed in")
+        val response = withTimeout(120_000) {
+            client.get("/api/backup/export") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }
+        if (!response.status.isSuccess()) {
+            throw ApiException(parseError(response.bodyAsText()))
+        }
+        val name = backupFileNameFromDisposition(response.headers[HttpHeaders.ContentDisposition])
+        return response.readRawBytes() to name
+    }
+
+    suspend fun downloadPreRestoreBackup(): Pair<ByteArray, String> {
+        val token = tokenStore.getToken() ?: throw ApiException("Not signed in")
+        val response = withTimeout(120_000) {
+            client.post("/api/backup/pre-restore-export") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }
+        if (!response.status.isSuccess()) {
+            throw ApiException(parseError(response.bodyAsText()))
+        }
+        val name = backupFileNameFromDisposition(response.headers[HttpHeaders.ContentDisposition])
+        return response.readRawBytes() to name
+    }
+
+    suspend fun validateBackup(fileName: String, bytes: ByteArray): BackupPreviewDto {
+        return backupMultipartPost("/backup/validate", fileName, bytes)
+    }
+
+    suspend fun restoreBackup(fileName: String, bytes: ByteArray): BackupRestoreResultDto {
+        return backupMultipartPost("/backup/restore", fileName, bytes, confirm = "RESTORE")
+    }
+
+    private suspend inline fun <reified T> backupMultipartPost(
+        path: String,
+        fileName: String,
+        bytes: ByteArray,
+        confirm: String? = null,
+    ): T {
+        val token = tokenStore.getToken() ?: throw ApiException("Not signed in")
+        val response = withTimeout(120_000) {
+            client.post("/api$path") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                setBody(
+                    MultiPartFormDataContent(
+                        formData {
+                            append(
+                                "file",
+                                bytes,
+                                Headers.build {
+                                    append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                                    append(HttpHeaders.ContentType, "application/zip")
+                                },
+                            )
+                            if (confirm != null) {
+                                append("confirm", confirm)
+                            }
+                        },
+                    ),
+                )
+            }
+        }
+        if (!response.status.isSuccess()) {
+            throw ApiException(parseError(response.bodyAsText()))
+        }
+        return response.body()
     }
 
     suspend fun mapRoute(from: LatLng, to: LatLng): RouteResponseDto {

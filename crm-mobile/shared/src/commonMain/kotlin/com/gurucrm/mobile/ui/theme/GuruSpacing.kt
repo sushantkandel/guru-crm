@@ -3,7 +3,7 @@ package com.gurucrm.mobile.ui.theme
 import androidx.compose.ui.unit.dp
 
 /**
- * Guru CRM spacing scale — Material Design 3 eight-point grid.
+ * Sales Guru spacing scale — Material Design 3 eight-point grid.
  *
  * xs/sm: related elements in a row or dense groups
  * md: standard field gap, screen horizontal padding, card padding
