@@ -71,10 +71,10 @@ fun LoginScreen(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(GuruSpacing.lg))
-
-            AppLogo(size = 220.dp)
             Spacer(Modifier.height(GuruSpacing.md))
+
+            AppLogo(size = 150.dp)
+            Spacer(Modifier.height(GuruSpacing.sm))
 
             Text(
                 "Field sales mobile",
@@ -82,7 +82,7 @@ fun LoginScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Spacer(Modifier.height(GuruSpacing.xl))
+            Spacer(Modifier.height(GuruSpacing.lg))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -188,23 +188,21 @@ private fun LoginAuthFooter(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = GuruSpacing.lg, bottom = GuruSpacing.sm),
+            .padding(top = GuruSpacing.sm, bottom = GuruSpacing.sm),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TextButton(
             onClick = onForgotPassword,
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = GuruSpacing.sm),
+            contentPadding = PaddingValues(vertical = GuruSpacing.xs),
         ) {
             Text("Forgot password?")
         }
 
-        Spacer(Modifier.height(GuruSpacing.md))
-
         TextButton(
             onClick = onRegister,
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = GuruSpacing.sm),
+            contentPadding = PaddingValues(vertical = GuruSpacing.xs),
         ) {
             Text("Register")
         }

@@ -81,7 +81,7 @@ data class RegisterCompanyRequest(
     val ownerName: String,
     val email: String,
     val password: String,
-    val phone: String = "",
+    val phone: String,
     val address: CompanyAddressInput,
 )
 

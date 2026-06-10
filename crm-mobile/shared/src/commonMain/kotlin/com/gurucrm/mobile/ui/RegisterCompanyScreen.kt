@@ -54,6 +54,7 @@ fun RegisterCompanyScreen(
         ownerName.isNotBlank() &&
         email.isNotBlank() &&
         password.length >= 6 &&
+        phone.isNotBlank() &&
         location.province.isNotBlank() &&
         location.district.isNotBlank() &&
         location.municipality.isNotBlank() &&
@@ -114,7 +115,7 @@ fun RegisterCompanyScreen(
                 GuruTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = "Company phone (optional)",
+                    label = "Company phone",
                 )
 
                 GuruFormActions {

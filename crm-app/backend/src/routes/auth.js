@@ -24,7 +24,7 @@ const registerCompanySchema = z.object({
   ownerName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
-  phone: z.string().optional(),
+  phone: z.string().min(1),
   address: companyAddressSchema,
 });
 

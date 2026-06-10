@@ -148,11 +148,12 @@ export default function RegisterCompany() {
             />
           </div>
           <div>
-            <label className={formLabel}>Company Phone</label>
+            <label className={formLabel}>Company Phone *</label>
             <input
               className={formInput}
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              required
             />
           </div>
           <button type="submit" disabled={loading} className={`${formBtnPrimary} w-full`}>
