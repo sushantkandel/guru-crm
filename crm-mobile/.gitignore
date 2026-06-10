@@ -1,9 +1,13 @@
 *.iml
 .gradle
 /local.properties
+*.jks
+*.keystore
+/keystore/
 /.idea
 .DS_Store
 build/
+/androidApp/live/
 /captures
 .externalNativeBuild
 .cxx

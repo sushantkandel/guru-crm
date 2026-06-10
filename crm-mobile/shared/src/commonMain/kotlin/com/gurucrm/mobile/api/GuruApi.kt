@@ -17,6 +17,7 @@ import com.gurucrm.mobile.data.NepalWardsResponse
 import com.gurucrm.mobile.data.DashboardStatsDto
 import com.gurucrm.mobile.data.ErrorResponse
 import com.gurucrm.mobile.data.ForgotPasswordRequest
+import com.gurucrm.mobile.data.GoogleAuthRequest
 import com.gurucrm.mobile.data.LoginRequest
 import com.gurucrm.mobile.data.MessageResponse
 import com.gurucrm.mobile.data.RegisterCompanyRequest
@@ -188,6 +189,22 @@ class GuruApi(private val tokenStore: TokenStore) {
             }
         } catch (e: Exception) {
             throw mapNetworkError(e, "Login failed")
+        }
+        if (!response.status.isSuccess()) {
+            throw ApiException(parseError(response.bodyAsText()))
+        }
+        val auth = response.body<AuthResponse>()
+        tokenStore.saveSession(auth.token, auth.user)
+        return auth
+    }
+
+    suspend fun loginWithGoogle(credential: String): AuthResponse {
+        val response = try {
+            client.post("/api/auth/google") {
+                setBody(GoogleAuthRequest(credential))
+            }
+        } catch (e: Exception) {
+            throw mapNetworkError(e, "Google sign-in failed")
         }
         if (!response.status.isSuccess()) {
             throw ApiException(parseError(response.bodyAsText()))

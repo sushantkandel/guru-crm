@@ -27,15 +27,20 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Configure production API URL
+      - name: Configure flavor properties
+        env:
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
         run: |
-          echo "api.base.url=https://guru-crm.onrender.com" >> local.properties
+          echo "api.base.url.live=https://guru-crm.onrender.com" >> local.properties
+          if [ -n "$GOOGLE_WEB_CLIENT_ID" ]; then
+            echo "google.web.client.id=$GOOGLE_WEB_CLIENT_ID" >> local.properties
+          fi
 
-      - name: Assemble debug APK
-        run: ./gradlew :androidApp:assembleDebug --no-daemon
+      - name: Assemble live debug APK
+        run: ./gradlew :androidApp:assembleLiveDebug --no-daemon
 
-      - name: Upload debug APK
+      - name: Upload live debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: androidApp-debug
-          path: crm-mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk
+          name: androidApp-live-debug
+          path: crm-mobile/androidApp/build/outputs/apk/live/debug/androidApp-live-debug.apk

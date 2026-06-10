@@ -17,6 +17,9 @@ data class UserDto(
 data class LoginRequest(val email: String, val password: String)
 
 @Serializable
+data class GoogleAuthRequest(val credential: String)
+
+@Serializable
 data class AuthResponse(val token: String, val user: UserDto)
 
 @Serializable

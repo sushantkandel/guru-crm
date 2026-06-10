@@ -7,12 +7,18 @@ val localProperties = Properties().apply {
         load(FileInputStream(file))
     }
 }
-// Default: production API. For local backend, set in local.properties (not committed):
-//   api.base.url=http://127.0.0.1:5001
-val productionApiBaseUrl = "https://guru-crm.onrender.com"
-val debugApiBaseUrl: String = localProperties.getProperty("api.base.url") ?: productionApiBaseUrl
-val releaseApiBaseUrl: String =
-    localProperties.getProperty("api.base.url.release") ?: productionApiBaseUrl
+// Flavor API URLs — override in local.properties (not committed):
+//   api.base.url.develop=http://10.0.2.2:5001
+//   api.base.url.live=https://guru-crm.onrender.com
+val liveApiBaseUrl: String =
+    localProperties.getProperty("api.base.url.live")
+        ?: localProperties.getProperty("api.base.url")
+        ?: "https://guru-crm.onrender.com"
+val developApiBaseUrl: String =
+    localProperties.getProperty("api.base.url.develop")
+        ?: localProperties.getProperty("api.base.url")
+        ?: "http://10.0.2.2:5001"
+val googleWebClientId: String = localProperties.getProperty("google.web.client.id") ?: ""
 
 plugins {
     kotlin("multiplatform")
@@ -61,6 +67,9 @@ kotlin {
                 implementation("androidx.webkit:webkit:1.12.1")
                 implementation("io.ktor:ktor-client-okhttp:3.1.3")
                 implementation("com.google.android.gms:play-services-location:21.3.0")
+                implementation("androidx.credentials:credentials:1.3.0")
+                implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+                implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
                 api("androidx.activity:activity-compose:1.10.1")
                 api("androidx.appcompat:appcompat:1.7.0")
                 api("androidx.core:core-ktx:1.15.0")
@@ -95,12 +104,27 @@ android {
 
     defaultConfig {
         minSdk = (findProperty("android.minSdk") as String).toInt()
-        buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("develop") {
+            dimension = "environment"
+            buildConfigField("String", "API_BASE_URL", "\"$developApiBaseUrl\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+            buildConfigField("String", "APP_FLAVOR", "\"develop\"")
+        }
+        create("live") {
+            dimension = "environment"
+            buildConfigField("String", "API_BASE_URL", "\"$liveApiBaseUrl\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+            buildConfigField("String", "APP_FLAVOR", "\"live\"")
+        }
     }
 
     buildTypes {
         getByName("release") {
-            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
+            isMinifyEnabled = false
         }
     }
     compileOptions {

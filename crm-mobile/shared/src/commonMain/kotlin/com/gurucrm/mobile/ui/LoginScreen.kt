@@ -1,13 +1,16 @@
 package com.gurucrm.mobile.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -21,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.UserDto
+import com.gurucrm.mobile.platform.GoogleSignIn
 import com.gurucrm.mobile.ui.components.AppLogo
+import com.gurucrm.mobile.ui.components.GuruOutlinedButton
 import com.gurucrm.mobile.ui.components.GuruPasswordField
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
 import com.gurucrm.mobile.ui.components.GuruTextField
@@ -39,7 +44,9 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
+    var googleLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val googleSignInAvailable = remember { GoogleSignIn.isAvailable() }
 
     Column(
         Modifier.fillMaxSize().padding(GuruSpacing.authPadding),
@@ -58,6 +65,34 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(GuruSpacing.fieldGap),
         ) {
+            if (googleSignInAvailable) {
+                GuruOutlinedButton(
+                    text = if (googleLoading) "Signing in with Google…" else "Sign in with Google",
+                    enabled = !loading && !googleLoading,
+                    onClick = {
+                        googleLoading = true
+                        error = null
+                        scope.launch {
+                            try {
+                                val token = GoogleSignIn.signIn().getOrThrow()
+                                val auth = api.loginWithGoogle(token)
+                                onLoggedIn(auth.user)
+                            } catch (e: Exception) {
+                                val message = e.message.orEmpty()
+                                if (!message.contains("cancelled", ignoreCase = true)) {
+                                    error = message.ifBlank { "Google sign-in failed" }
+                                }
+                            } finally {
+                                googleLoading = false
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                RowDividerLabel()
+            }
+
             GuruTextField(value = email, onValueChange = { email = it }, label = "Email")
             GuruPasswordField(value = password, onValueChange = { password = it }, label = "Password")
 
@@ -70,7 +105,7 @@ fun LoginScreen(
 
             GuruPrimaryButton(
                 text = if (loading) "Signing in…" else "Sign in",
-                enabled = !loading && email.isNotBlank() && password.isNotBlank(),
+                enabled = !loading && !googleLoading && email.isNotBlank() && password.isNotBlank(),
                 onClick = {
                     loading = true
                     error = null
@@ -94,6 +129,29 @@ fun LoginScreen(
             TextButton(onClick = onRegisterCompany, modifier = Modifier.fillMaxWidth()) {
                 Text("Create your company")
             }
+        }
+    }
+}
+
+@Composable
+private fun RowDividerLabel() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = GuruSpacing.sm),
+        contentAlignment = Alignment.Center,
+    ) {
+        HorizontalDivider()
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.padding(horizontal = GuruSpacing.sm),
+        ) {
+            Text(
+                text = "Or continue with email",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = GuruSpacing.xs),
+            )
         }
     }
 }

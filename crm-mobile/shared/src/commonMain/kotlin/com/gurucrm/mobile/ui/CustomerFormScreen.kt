@@ -56,7 +56,7 @@ fun CustomerFormScreen(
         if (!isEdit) return@LaunchedEffect
         loading = true
         try {
-            val c = api.customer(customerId!!)
+            val c = api.customer(customerId)
             val addr = c.addresses.firstOrNull()
             name = c.name; phone = c.phone; email = c.email.orEmpty(); shopName = c.shopName
             panVat = c.panVatNumber.orEmpty(); street = addr?.street.orEmpty()
@@ -106,8 +106,12 @@ fun CustomerFormScreen(
                                             address = CustomerAddressInput(location.province, location.district, location.municipality, location.ward,
                                                 street.trim().ifBlank { null }, latitude, longitude),
                                         )
-                                        val savedId = if (isEdit) { api.updateCustomer(customerId!!, payload); customerId!! }
-                                        else api.createCustomer(payload)
+                                        val savedId = if (isEdit) {
+                                            api.updateCustomer(customerId, payload)
+                                            customerId
+                                        } else {
+                                            api.createCustomer(payload)
+                                        }
                                         onSaved(savedId)
                                     } catch (e: Exception) { error = e.message }
                                     finally { saving = false }

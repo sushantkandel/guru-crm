@@ -212,7 +212,7 @@ fun AppNavHost(
             }
 
             composable("customers/{id}") { entry ->
-                val id = entry.arguments?.getString("id") ?: return@composable
+                val id = entry.savedStateHandle.get<String>("id") ?: return@composable
                 CustomerDetailScreen(
                     api = api,
                     platform = platform,
@@ -238,7 +238,7 @@ fun AppNavHost(
                 )
             }
             composable("customers/edit/{id}") { entry ->
-                val id = entry.arguments?.getString("id") ?: return@composable
+                val id = entry.savedStateHandle.get<String>("id") ?: return@composable
                 CustomerFormScreen(
                     api = api,
                     platform = platform,
@@ -255,7 +255,7 @@ fun AppNavHost(
                 route = "orders/new?customerId={customerId}",
                 arguments = listOf(navArgument("customerId") { type = NavType.StringType; defaultValue = "" }),
             ) { entry ->
-                val customerId = entry.arguments?.getString("customerId").orEmpty().ifBlank { null }
+                val customerId = entry.savedStateHandle.get<String>("customerId").orEmpty().ifBlank { null }
                 OrderFormScreen(
                     api = api,
                     user = user,
@@ -266,7 +266,7 @@ fun AppNavHost(
                 )
             }
             composable("orders/{id}") { entry ->
-                val id = entry.arguments?.getString("id") ?: return@composable
+                val id = entry.savedStateHandle.get<String>("id") ?: return@composable
                 OrderDetailScreen(
                     api = api,
                     user = user,
@@ -277,7 +277,7 @@ fun AppNavHost(
                 )
             }
             composable("orders/edit/{id}") { entry ->
-                val id = entry.arguments?.getString("id") ?: return@composable
+                val id = entry.savedStateHandle.get<String>("id") ?: return@composable
                 OrderFormScreen(
                     api = api,
                     user = user,
@@ -299,7 +299,7 @@ fun AppNavHost(
                     )
                 }
                 composable("products/edit/{id}") { entry ->
-                    val id = entry.arguments?.getString("id") ?: return@composable
+                    val id = entry.savedStateHandle.get<String>("id") ?: return@composable
                     ProductFormScreen(
                         api = api,
                         user = user,
@@ -314,7 +314,7 @@ fun AppNavHost(
                 route = "payments/new?customerId={customerId}",
                 arguments = listOf(navArgument("customerId") { type = NavType.StringType; defaultValue = "" }),
             ) { entry ->
-                val customerId = entry.arguments?.getString("customerId").orEmpty().ifBlank { null }
+                val customerId = entry.savedStateHandle.get<String>("customerId").orEmpty().ifBlank { null }
                 PaymentFormScreen(
                     api = api,
                     user = user,
@@ -325,7 +325,7 @@ fun AppNavHost(
                 )
             }
             composable("payments/edit/{id}") { entry ->
-                val id = entry.arguments?.getString("id") ?: return@composable
+                val id = entry.savedStateHandle.get<String>("id") ?: return@composable
                 PaymentFormScreen(
                     api = api,
                     user = user,

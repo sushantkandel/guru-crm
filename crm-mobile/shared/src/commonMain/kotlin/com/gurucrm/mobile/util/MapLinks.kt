@@ -1,6 +1,7 @@
 package com.gurucrm.mobile.util
 
 import com.gurucrm.mobile.data.LatLng
+import com.gurucrm.mobile.format
 
 private val nepalLat = 26.0..31.0
 private val nepalLng = 80.0..89.0
@@ -18,7 +19,7 @@ fun resolveShopCoords(latitude: Double?, longitude: Double?): LatLng? {
     return LatLng(lat, lng)
 }
 
-private fun formatCoord(value: Double): String = "%.7f".format(value)
+private fun formatCoord(value: Double): String = value.format(7)
 
 private fun encodeMapLabel(label: String): String =
     encodeURIComponent(label.trim()).replace("%20", "+")
@@ -30,7 +31,7 @@ private fun encodeURIComponent(value: String): String =
             c in 'a'.code..'z'.code || c in 'A'.code..'Z'.code || c in '0'.code..'9'.code ||
                 c == '-'.code || c == '_'.code || c == '.'.code || c == '~'.code -> c.toChar().toString()
             c == ' '.code -> "+"
-            else -> "%%%02X".format(c)
+            else -> "%%${c.toString(16).uppercase().padStart(2, '0')}"
         }
     }
 
@@ -55,7 +56,7 @@ fun googleMapsDirectionsUrl(
 
 fun formatRouteDistance(meters: Double): String {
     if (meters < 1000) return "${meters.toInt()} m"
-    return "%.1f km".format(meters / 1000)
+    return "${(meters / 1000).format(1)} km"
 }
 
 fun formatRouteDuration(seconds: Double): String {

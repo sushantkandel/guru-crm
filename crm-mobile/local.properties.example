@@ -1,0 +1,10 @@
+# Copy to local.properties and fill in your values (never commit local.properties).
+
+sdk.dir=/path/to/Android/sdk
+
+# Google sign-in (Web OAuth client ID — same as Render GOOGLE_CLIENT_ID)
+google.web.client.id=YOUR_ID.apps.googleusercontent.com
+
+# API URLs per flavor (optional)
+# api.base.url.develop=http://10.0.2.2:5001
+# api.base.url.live=https://guru-crm.onrender.com

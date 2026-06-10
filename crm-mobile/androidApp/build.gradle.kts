@@ -39,6 +39,19 @@ android {
         versionCode = 1
         versionName = "1.0.0"
     }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("develop") {
+            dimension = "environment"
+            applicationIdSuffix = ".develop"
+            versionNameSuffix = "-dev"
+        }
+        create("live") {
+            dimension = "environment"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -48,7 +61,7 @@ android {
     }
 }
 
-tasks.matching { it.name == "installDebug" }.configureEach {
+tasks.matching { it.name == "installDevelopDebug" }.configureEach {
     doFirst {
         val adb = localProperties.getProperty("sdk.dir")?.let { "$it/platform-tools/adb" } ?: return@doFirst
         runCatching {
