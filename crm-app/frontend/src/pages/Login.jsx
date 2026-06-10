@@ -47,7 +47,7 @@ export default function Login() {
   return (
     <div className={formAuthShell}>
       <div className={formAuthCard}>
-        <AppLogo size={220} />
+        <AppLogo size={220} crop />
         <p className={`${formSubtitle} mt-4`}>Sign in to manage customers, orders & payments</p>
 
         {successMessage && <div className={formAlertSuccess}>{successMessage}</div>}

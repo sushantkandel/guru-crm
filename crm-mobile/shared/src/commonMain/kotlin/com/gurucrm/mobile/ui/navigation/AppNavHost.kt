@@ -66,7 +66,7 @@ private fun visibleTabsFor(user: UserDto): List<TabRoute> = buildList {
 
 private sealed class TabRoute(val route: String, val label: String, val navLabel: String) {
     data object Dashboard : TabRoute("tab/dashboard", "Dashboard", "Home")
-    data object Customers : TabRoute("tab/customers", "Customers", "Clients")
+    data object Customers : TabRoute("tab/customers", "Customers", "Customer")
     data object Orders : TabRoute("tab/orders", "Orders", "Orders")
     data object Products : TabRoute("tab/products", "Products", "Product")
     data object Payments : TabRoute("tab/payments", "Payments", "Pay")

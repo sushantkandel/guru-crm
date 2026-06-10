@@ -47,7 +47,7 @@ fun LoginScreen(
     ) {
         Spacer(Modifier.height(GuruSpacing.lg))
 
-        AppLogo(size = 220.dp)
+        AppLogo(size = 220.dp, crop = true)
         Spacer(Modifier.height(GuruSpacing.md))
 
         Text("Field sales mobile", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
