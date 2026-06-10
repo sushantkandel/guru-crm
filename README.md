@@ -13,6 +13,3 @@ Field-sales CRM for Nepal — customers, orders, payments, maps, and mobile app.
 
 Full steps: **[DEPLOY.md](DEPLOY.md)**
 
-## Demo login
-
-`admin@crm.com` / `admin123`
