@@ -52,9 +52,7 @@ Install the APK from `androidApp/build/outputs/apk/debug/androidApp-debug.apk`, 
 
 iOS uses CoreLocation for GPS on the Map tab and customer map picker.
 
-## Demo login
 
-- `admin@crm.com` / `admin123`
 
 ## Project structure
 
