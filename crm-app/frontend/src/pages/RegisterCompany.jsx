@@ -60,7 +60,7 @@ export default function RegisterCompany() {
   return (
     <div className={formAuthShell}>
       <div className={`${formAuthCard} max-w-lg`}>
-        <AppLogo />
+        <AppLogo size={128} />
         <h1 className={formTitle}>Create Your Company</h1>
         <p className={formSubtitle}>
           Sign up as company owner (admin). You will manage staff, customers, products, and permissions.

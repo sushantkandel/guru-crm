@@ -38,7 +38,7 @@ export default function ForgotPassword() {
   return (
     <div className={formAuthShell}>
       <div className={formAuthCard}>
-        <AppLogo />
+        <AppLogo size={128} />
         <h1 className={formTitle}>Forgot Password</h1>
         <p className={formSubtitle}>Enter your email to receive a reset link</p>
 

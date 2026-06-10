@@ -31,7 +31,7 @@ export default function Layout() {
       <aside className="w-full lg:w-60 bg-slate-900 text-white flex flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen lg:min-h-0">
         <div className="px-4 py-5 border-b border-slate-700/80">
           <div className="flex items-center gap-3">
-            <AppLogo className="h-10 w-10 shrink-0 object-contain" />
+            <AppLogo size={48} className="mb-0" />
             <h1 className="text-lg font-bold tracking-tight">{APP_NAME}</h1>
           </div>
           {user?.companyName && (

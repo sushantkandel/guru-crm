@@ -10,8 +10,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,11 +17,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +35,8 @@ import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.platform.BackupFileService
 import com.gurucrm.mobile.platform.PlatformServices
-import com.gurucrm.mobile.ui.components.AppLogo
+import com.gurucrm.mobile.ui.components.GuruBottomNav
+import com.gurucrm.mobile.ui.components.GuruBottomNavItem
 import com.gurucrm.mobile.ui.BackupRestoreScreen
 import com.gurucrm.mobile.ui.CustomerDetailScreen
 import com.gurucrm.mobile.ui.CustomerFormScreen
@@ -67,13 +64,16 @@ private fun visibleTabsFor(user: UserDto): List<TabRoute> = buildList {
     add(TabRoute.Map)
 }
 
-private sealed class TabRoute(val route: String, val label: String) {
-    data object Dashboard : TabRoute("tab/dashboard", "Dashboard")
-    data object Customers : TabRoute("tab/customers", "Customers")
-    data object Orders : TabRoute("tab/orders", "Orders")
-    data object Products : TabRoute("tab/products", "Products")
-    data object Payments : TabRoute("tab/payments", "Payments")
-    data object Map : TabRoute("tab/map", "Map")
+private sealed class TabRoute(val route: String, val label: String, val navLabel: String) {
+    data object Dashboard : TabRoute("tab/dashboard", "Dashboard", "Home")
+    data object Customers : TabRoute("tab/customers", "Customers", "Clients")
+    data object Orders : TabRoute("tab/orders", "Orders", "Orders")
+    data object Products : TabRoute("tab/products", "Products", "Product")
+    data object Payments : TabRoute("tab/payments", "Payments", "Pay")
+    data object Map : TabRoute("tab/map", "Map", "Map")
+
+    fun toNavItem(icon: androidx.compose.ui.graphics.vector.ImageVector) =
+        GuruBottomNavItem(route = route, label = navLabel, icon = icon)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,21 +91,18 @@ fun AppNavHost(
     val showBottomBar = currentRoute?.startsWith("tab/") == true
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             if (showBottomBar) {
                 TopAppBar(
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            AppLogo(size = 32.dp)
-                            Spacer(Modifier.width(8.dp))
-                            Column {
-                                Text(APP_NAME, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(
-                                    user.companyName.ifBlank { user.name },
-                                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                        Column {
+                            Text(APP_NAME, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                user.companyName.ifBlank { user.name },
+                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     },
                     actions = {
@@ -124,34 +121,29 @@ fun AppNavHost(
         },
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
-                    visibleTabsFor(user).forEach { tab ->
-                        NavigationBarItem(
-                            selected = currentRoute == tab.route,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(TabRoute.Dashboard.route) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                val tabs = visibleTabsFor(user)
+                GuruBottomNav(
+                    items = tabs.map { tab ->
+                        tab.toNavItem(
+                            when (tab) {
+                                TabRoute.Dashboard -> Icons.Default.Dashboard
+                                TabRoute.Customers -> Icons.Default.People
+                                TabRoute.Orders -> Icons.Default.ShoppingCart
+                                TabRoute.Products -> Icons.Default.Category
+                                TabRoute.Payments -> Icons.Default.Payment
+                                TabRoute.Map -> Icons.Default.Map
                             },
-                            icon = {
-                                Icon(
-                                    when (tab) {
-                                        TabRoute.Dashboard -> Icons.Default.Dashboard
-                                        TabRoute.Customers -> Icons.Default.People
-                                        TabRoute.Orders -> Icons.Default.ShoppingCart
-                                        TabRoute.Products -> Icons.Default.Category
-                                        TabRoute.Payments -> Icons.Default.Payment
-                                        TabRoute.Map -> Icons.Default.Map
-                                    },
-                                    contentDescription = tab.label,
-                                )
-                            },
-                            label = { Text(tab.label) },
                         )
-                    }
-                }
+                    },
+                    selectedRoute = currentRoute.orEmpty(),
+                    onSelect = { route ->
+                        navController.navigate(route) {
+                            popUpTo(TabRoute.Dashboard.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
             }
         },
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,

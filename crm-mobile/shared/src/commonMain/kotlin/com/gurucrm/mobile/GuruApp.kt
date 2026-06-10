@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,7 +23,6 @@ import com.gurucrm.mobile.platform.createPlatformServices
 import com.gurucrm.mobile.ui.components.AppLogo
 import com.gurucrm.mobile.ui.ForgotPasswordScreen
 import com.gurucrm.mobile.ui.theme.GuruSpacing
-import com.gurucrm.mobile.util.APP_NAME
 import com.gurucrm.mobile.ui.GuruTheme
 import com.gurucrm.mobile.ui.LoginScreen
 import com.gurucrm.mobile.ui.MainShell
@@ -74,10 +71,8 @@ fun GuruApp() {
             bootstrapping -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        AppLogo(size = 160.dp)
+                        AppLogo(size = 220.dp)
                         Spacer(Modifier.height(GuruSpacing.lg))
-                        Text(APP_NAME, style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(GuruSpacing.md))
                         CircularProgressIndicator()
                     }
                 }

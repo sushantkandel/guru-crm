@@ -26,7 +26,6 @@ import com.gurucrm.mobile.ui.components.GuruPasswordField
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
 import com.gurucrm.mobile.ui.components.GuruTextField
 import com.gurucrm.mobile.ui.theme.GuruSpacing
-import com.gurucrm.mobile.util.APP_NAME
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,11 +47,9 @@ fun LoginScreen(
     ) {
         Spacer(Modifier.height(GuruSpacing.lg))
 
-        AppLogo(size = 128.dp)
+        AppLogo(size = 220.dp)
         Spacer(Modifier.height(GuruSpacing.md))
 
-        Text(APP_NAME, style = MaterialTheme.typography.headlineLarge)
-        Spacer(Modifier.height(GuruSpacing.sm))
         Text("Field sales mobile", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Spacer(Modifier.height(GuruSpacing.xl))

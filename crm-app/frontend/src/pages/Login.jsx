@@ -6,7 +6,6 @@ import PasswordInput from '../components/PasswordInput';
 import {
   formAuthShell,
   formAuthCard,
-  formTitle,
   formSubtitle,
   formLabel,
   formInput,
@@ -15,7 +14,6 @@ import {
   formAlertSuccess,
 } from '../utils/formStyles';
 import AppLogo from '../components/AppLogo';
-import { APP_NAME } from '../config/branding';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -49,9 +47,8 @@ export default function Login() {
   return (
     <div className={formAuthShell}>
       <div className={formAuthCard}>
-        <AppLogo />
-        <h1 className={formTitle}>{APP_NAME}</h1>
-        <p className={formSubtitle}>Sign in to manage customers, orders & payments</p>
+        <AppLogo size={220} />
+        <p className={`${formSubtitle} mt-4`}>Sign in to manage customers, orders & payments</p>
 
         {successMessage && <div className={formAlertSuccess}>{successMessage}</div>}
         {error && <div className={formAlertError}>{error}</div>}
