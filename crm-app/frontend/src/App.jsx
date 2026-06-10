@@ -32,6 +32,7 @@ export default function App() {
         <BrowserRouter basename={routerBasename}>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<RegisterCompany />} />
             <Route path="/register-company" element={<RegisterCompany />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />

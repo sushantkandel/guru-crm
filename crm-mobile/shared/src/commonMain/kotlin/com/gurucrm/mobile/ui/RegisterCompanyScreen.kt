@@ -33,12 +33,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun RegisterCompanyScreen(
     api: GuruApi,
+    initialEmail: String = "",
+    initialOwnerName: String = "",
+    fromAuth: Boolean = false,
     onBack: () -> Unit,
     onRegistered: (UserDto) -> Unit,
 ) {
     var companyName by remember { mutableStateOf("") }
-    var ownerName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+    var ownerName by remember(initialOwnerName) { mutableStateOf(initialOwnerName) }
+    var email by remember(initialEmail) { mutableStateOf(initialEmail) }
     var password by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var street by remember { mutableStateOf("") }
@@ -56,7 +59,7 @@ fun RegisterCompanyScreen(
         location.municipality.isNotBlank() &&
         street.isNotBlank()
 
-    GuruScaffold(title = "Create company", onBack = onBack) { padding ->
+    GuruScaffold(title = "Register", onBack = onBack) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -64,8 +67,16 @@ fun RegisterCompanyScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             GuruFormColumn(scroll = false) {
+                if (fromAuth) {
+                    Text(
+                        "No account found — complete registration to continue.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
                 Text(
-                    "Sign up as company owner. You will manage staff, customers, products, and permissions.",
+                    "Register as company owner. You will manage staff, customers, products, and permissions.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -111,7 +122,7 @@ fun RegisterCompanyScreen(
                         Text(it, color = MaterialTheme.colorScheme.error)
                     }
                     GuruPrimaryButton(
-                        text = if (saving) "Creating…" else "Create company & sign in",
+                        text = if (saving) "Registering…" else "Register & sign in",
                         enabled = !saving && canSubmit,
                         onClick = {
                             saving = true

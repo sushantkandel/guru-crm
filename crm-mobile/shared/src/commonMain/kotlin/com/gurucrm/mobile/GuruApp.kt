@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gurucrm.mobile.api.GuruApi
+import com.gurucrm.mobile.data.RegisterDraft
 import com.gurucrm.mobile.data.TokenStore
 import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.platform.createBackupFileService
@@ -44,6 +45,7 @@ fun GuruApp() {
     var user by remember { mutableStateOf<UserDto?>(null) }
     var bootstrapping by remember { mutableStateOf(true) }
     var authScreen by remember { mutableStateOf(AuthScreen.Login) }
+    var registerDraft by remember { mutableStateOf(RegisterDraft()) }
 
     LaunchedEffect(Unit) {
         val token = tokenStore.getToken()
@@ -83,7 +85,10 @@ fun GuruApp() {
                         api = api,
                         onLoggedIn = { user = it },
                         onForgotPassword = { authScreen = AuthScreen.ForgotPassword },
-                        onRegisterCompany = { authScreen = AuthScreen.RegisterCompany },
+                        onRegister = { draft ->
+                            registerDraft = draft ?: RegisterDraft()
+                            authScreen = AuthScreen.RegisterCompany
+                        },
                     )
                     AuthScreen.ForgotPassword -> ForgotPasswordScreen(
                         api = api,
@@ -91,9 +96,16 @@ fun GuruApp() {
                     )
                     AuthScreen.RegisterCompany -> RegisterCompanyScreen(
                         api = api,
-                        onBack = { authScreen = AuthScreen.Login },
+                        initialEmail = registerDraft.email,
+                        initialOwnerName = registerDraft.ownerName,
+                        fromAuth = registerDraft.fromAuth,
+                        onBack = {
+                            registerDraft = RegisterDraft()
+                            authScreen = AuthScreen.Login
+                        },
                         onRegistered = {
                             user = it
+                            registerDraft = RegisterDraft()
                             authScreen = AuthScreen.Login
                         },
                     )
@@ -108,6 +120,7 @@ fun GuruApp() {
                     onLogout = {
                         api.logout()
                         user = null
+                        registerDraft = RegisterDraft()
                         authScreen = AuthScreen.Login
                     },
                 )

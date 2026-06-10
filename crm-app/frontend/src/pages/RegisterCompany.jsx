@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NepalLocationSelect from '../components/NepalLocationSelect';
 import PasswordInput from '../components/PasswordInput';
@@ -15,6 +15,7 @@ import {
   formLegend,
   formBtnPrimary,
   formAlertError,
+  formAlertSuccess,
 } from '../utils/formStyles';
 
 const emptyAddress = {
@@ -26,10 +27,13 @@ const emptyAddress = {
 };
 
 export default function RegisterCompany() {
+  const location = useLocation();
+  const registerState = location.state || {};
+
   const [form, setForm] = useState({
     companyName: '',
-    ownerName: '',
-    email: '',
+    ownerName: registerState.ownerName || '',
+    email: registerState.email || '',
     password: '',
     phone: '',
     address: { ...emptyAddress },
@@ -38,6 +42,7 @@ export default function RegisterCompany() {
   const [loading, setLoading] = useState(false);
   const { registerCompany } = useAuth();
   const navigate = useNavigate();
+  const fromAuth = Boolean(registerState.fromAuth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,11 +66,16 @@ export default function RegisterCompany() {
     <div className={formAuthShell}>
       <div className={`${formAuthCard} max-w-lg`}>
         <AppLogo size={128} />
-        <h1 className={formTitle}>Create Your Company</h1>
+        <h1 className={formTitle}>Register</h1>
         <p className={formSubtitle}>
-          Sign up as company owner (admin). You will manage staff, customers, products, and permissions.
+          Register as company owner (admin). You will manage staff, customers, products, and permissions.
         </p>
 
+        {fromAuth && (
+          <div className={formAlertSuccess}>
+            No account found — complete registration to continue.
+          </div>
+        )}
         {error && <div className={formAlertError}>{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
@@ -146,7 +156,7 @@ export default function RegisterCompany() {
             />
           </div>
           <button type="submit" disabled={loading} className={`${formBtnPrimary} w-full`}>
-            {loading ? 'Creating...' : 'Create Company & Sign In'}
+            {loading ? 'Registering...' : 'Register & sign in'}
           </button>
         </form>
 

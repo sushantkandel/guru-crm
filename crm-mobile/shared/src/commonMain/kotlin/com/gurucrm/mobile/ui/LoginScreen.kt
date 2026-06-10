@@ -26,8 +26,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.gurucrm.mobile.api.AuthException
 import com.gurucrm.mobile.api.GuruApi
+import com.gurucrm.mobile.data.AuthErrorCodes
+import com.gurucrm.mobile.data.RegisterDraft
 import com.gurucrm.mobile.data.UserDto
+import com.gurucrm.mobile.data.needsRegisterRedirect
 import com.gurucrm.mobile.platform.GoogleSignIn
 import com.gurucrm.mobile.ui.components.AppLogo
 import com.gurucrm.mobile.ui.components.GuruOutlinedButton
@@ -35,6 +39,7 @@ import com.gurucrm.mobile.ui.components.GuruPasswordField
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
 import com.gurucrm.mobile.ui.components.GuruTextField
 import com.gurucrm.mobile.ui.theme.GuruSpacing
+import com.gurucrm.mobile.util.parseGoogleCredential
 import kotlinx.coroutines.launch
 
 @Composable
@@ -42,7 +47,7 @@ fun LoginScreen(
     api: GuruApi,
     onLoggedIn: (UserDto) -> Unit,
     onForgotPassword: () -> Unit,
-    onRegisterCompany: () -> Unit,
+    onRegister: (RegisterDraft?) -> Unit,
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -93,8 +98,23 @@ fun LoginScreen(
                             scope.launch {
                                 try {
                                     val token = GoogleSignIn.signIn().getOrThrow()
-                                    val auth = api.loginWithGoogle(token)
-                                    onLoggedIn(auth.user)
+                                    try {
+                                        val auth = api.loginWithGoogle(token)
+                                        onLoggedIn(auth.user)
+                                    } catch (e: AuthException) {
+                                        if (e.code == AuthErrorCodes.NO_COMPANY) {
+                                            val profile = parseGoogleCredential(token)
+                                            onRegister(
+                                                RegisterDraft(
+                                                    email = profile.email,
+                                                    ownerName = profile.ownerName,
+                                                    fromAuth = true,
+                                                ),
+                                            )
+                                        } else {
+                                            error = e.message ?: "Google sign-in failed"
+                                        }
+                                    }
                                 } catch (e: Exception) {
                                     val message = e.message.orEmpty()
                                     if (!message.contains("cancelled", ignoreCase = true)) {
@@ -130,6 +150,17 @@ fun LoginScreen(
                             try {
                                 val auth = api.login(email.trim(), password)
                                 onLoggedIn(auth.user)
+                            } catch (e: AuthException) {
+                                if (needsRegisterRedirect(e.code)) {
+                                    onRegister(
+                                        RegisterDraft(
+                                            email = email.trim(),
+                                            fromAuth = true,
+                                        ),
+                                    )
+                                } else {
+                                    error = e.message ?: "Login failed"
+                                }
                             } catch (e: Exception) {
                                 error = e.message ?: "Login failed"
                             } finally {
@@ -144,7 +175,7 @@ fun LoginScreen(
 
         LoginAuthFooter(
             onForgotPassword = onForgotPassword,
-            onRegisterCompany = onRegisterCompany,
+            onRegister = { onRegister(null) },
         )
     }
 }
@@ -152,7 +183,7 @@ fun LoginScreen(
 @Composable
 private fun LoginAuthFooter(
     onForgotPassword: () -> Unit,
-    onRegisterCompany: () -> Unit,
+    onRegister: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -171,11 +202,11 @@ private fun LoginAuthFooter(
         Spacer(Modifier.height(GuruSpacing.md))
 
         TextButton(
-            onClick = onRegisterCompany,
+            onClick = onRegister,
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(vertical = GuruSpacing.sm),
         ) {
-            Text("Create your company")
+            Text("Register")
         }
     }
 }

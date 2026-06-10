@@ -71,6 +71,11 @@ import kotlinx.serialization.json.Json
 
 class ApiException(message: String) : Exception(message)
 
+class AuthException(
+    message: String,
+    val code: String? = null,
+) : Exception(message)
+
 class GuruApi(private val tokenStore: TokenStore) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -177,10 +182,17 @@ class GuruApi(private val tokenStore: TokenStore) {
         }
     }
 
-    private fun parseError(raw: String): String {
-        return runCatching { json.decodeFromString<ErrorResponse>(raw).error }
-            .getOrNull() ?: "Request failed"
+    private data class ParsedError(val message: String, val code: String?)
+
+    private fun parseApiError(raw: String): ParsedError {
+        val response = runCatching { json.decodeFromString<ErrorResponse>(raw) }.getOrNull()
+        return ParsedError(
+            message = response?.error ?: "Request failed",
+            code = response?.code,
+        )
     }
+
+    private fun parseError(raw: String): String = parseApiError(raw).message
 
     suspend fun login(email: String, password: String): AuthResponse {
         val response = try {
@@ -191,7 +203,8 @@ class GuruApi(private val tokenStore: TokenStore) {
             throw mapNetworkError(e, "Login failed")
         }
         if (!response.status.isSuccess()) {
-            throw ApiException(parseError(response.bodyAsText()))
+            val parsed = parseApiError(response.bodyAsText())
+            throw AuthException(parsed.message, parsed.code)
         }
         val auth = response.body<AuthResponse>()
         tokenStore.saveSession(auth.token, auth.user)
@@ -207,7 +220,8 @@ class GuruApi(private val tokenStore: TokenStore) {
             throw mapNetworkError(e, "Google sign-in failed")
         }
         if (!response.status.isSuccess()) {
-            throw ApiException(parseError(response.bodyAsText()))
+            val parsed = parseApiError(response.bodyAsText())
+            throw AuthException(parsed.message, parsed.code)
         }
         val auth = response.body<AuthResponse>()
         tokenStore.saveSession(auth.token, auth.user)

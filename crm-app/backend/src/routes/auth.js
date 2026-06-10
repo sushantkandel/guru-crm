@@ -151,7 +151,7 @@ router.post('/login', async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid email or password', code: 'NO_ACCOUNT' });
     }
     if (!user.passwordHash) {
       return res.status(400).json({

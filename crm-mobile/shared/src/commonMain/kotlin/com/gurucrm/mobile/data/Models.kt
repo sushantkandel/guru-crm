@@ -23,7 +23,7 @@ data class GoogleAuthRequest(val credential: String)
 data class AuthResponse(val token: String, val user: UserDto)
 
 @Serializable
-data class ErrorResponse(val error: String? = null)
+data class ErrorResponse(val error: String? = null, val code: String? = null)
 
 @Serializable
 data class MessageResponse(val message: String = "")

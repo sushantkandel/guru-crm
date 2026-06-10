@@ -30,6 +30,10 @@ export default function Login() {
   const location = useLocation();
   const successMessage = location.state?.message;
 
+  const goToRegister = (state = {}) => {
+    navigate('/register', { state });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -38,6 +42,10 @@ export default function Login() {
       await login(email, password);
       navigate('/');
     } catch (err) {
+      if (err.response?.data?.code === 'NO_ACCOUNT') {
+        goToRegister({ email: email.trim(), fromAuth: 'login' });
+        return;
+      }
       setError(err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
@@ -57,6 +65,9 @@ export default function Login() {
           <GoogleLoginButton
             onSuccess={() => navigate('/')}
             onError={(msg) => setError(msg)}
+            onNeedsRegister={({ email: googleEmail, ownerName, fromAuth }) =>
+              goToRegister({ email: googleEmail, ownerName, fromAuth })
+            }
           />
         </div>
 
@@ -124,7 +135,7 @@ export default function Login() {
           <Link to="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</Link>
         </p>
         <p className="mt-2 text-center text-sm sm:text-base">
-          <Link to="/register-company" className="text-blue-600 hover:underline">Create your company</Link>
+          <Link to="/register" className="text-blue-600 hover:underline">Register</Link>
         </p>
       </div>
     </div>
