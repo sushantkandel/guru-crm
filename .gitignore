@@ -28,3 +28,6 @@ crm-mobile/.gradle/
 
 # Logs
 *.log
+
+# Local tooling
+.venv-logo/
