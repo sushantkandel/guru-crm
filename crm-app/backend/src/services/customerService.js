@@ -3,6 +3,16 @@ const { getCustomerBalances } = require('./balanceService');
 const { auditInclude } = require('../utils/audit');
 const { CUSTOMER_TYPES } = require('../schemas/customerInsight');
 
+function normalizeQueryList(value) {
+  if (value == null || value === '') return [];
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'object') return Object.values(value).map(String).filter(Boolean);
+  if (typeof value === 'string') {
+    return value.split(',').map((part) => part.trim()).filter(Boolean);
+  }
+  return [String(value)];
+}
+
 function buildCustomerWhere(query, user, companyId) {
   const {
     q,
@@ -73,14 +83,11 @@ function buildCustomerWhere(query, user, companyId) {
     where.AND.push({ businessStatus: business_status });
   }
 
-  if (customer_type) {
-    const types = (Array.isArray(customer_type) ? customer_type : [customer_type])
-      .filter((t) => CUSTOMER_TYPES.includes(t));
-    if (types.length === 1) {
-      where.AND.push({ customerTypes: { has: types[0] } });
-    } else if (types.length > 1) {
-      where.AND.push({ OR: types.map((t) => ({ customerTypes: { has: t } })) });
-    }
+  const customerTypes = normalizeQueryList(customer_type).filter((t) => CUSTOMER_TYPES.includes(t));
+  if (customerTypes.length === 1) {
+    where.AND.push({ customerTypes: { has: customerTypes[0] } });
+  } else if (customerTypes.length > 1) {
+    where.AND.push({ OR: customerTypes.map((t) => ({ customerTypes: { has: t } })) });
   }
 
   const productScopedFilters = [knows_product, is_selling].some((v) => v === 'true' || v === 'false');

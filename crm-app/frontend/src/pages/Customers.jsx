@@ -82,7 +82,9 @@ export default function Customers() {
     if (filters.municipality) params.municipality = filters.municipality;
     if (filters.ward) params.ward = filters.ward;
     if (filters.business_status) params.business_status = filters.business_status;
-    if (filters.customer_type.length) params.customer_type = filters.customer_type;
+    if (filters.customer_type.length) {
+      params.customer_type = filters.customer_type.join(',');
+    }
     if (filters.product_id) params.product_id = filters.product_id;
     if (filters.knows_product) params.knows_product = filters.knows_product;
     if (filters.is_selling) params.is_selling = filters.is_selling;

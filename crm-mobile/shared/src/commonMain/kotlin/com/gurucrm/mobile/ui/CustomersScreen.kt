@@ -28,6 +28,7 @@ import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.ui.components.BalanceChip
 import com.gurucrm.mobile.ui.components.EmptyState
 import com.gurucrm.mobile.ui.components.ErrorBanner
+import com.gurucrm.mobile.ui.components.CustomerTypeChips
 import com.gurucrm.mobile.ui.components.FilterChipRow
 import com.gurucrm.mobile.ui.components.GuruCard
 import com.gurucrm.mobile.ui.components.GuruOutlinedButton
@@ -48,7 +49,7 @@ fun CustomersScreen(
 ) {
     var search by remember { mutableStateOf("") }
     var showFilters by remember { mutableStateOf(false) }
-    var customerType by remember { mutableStateOf("") }
+    var customerTypes by remember { mutableStateOf<List<String>>(emptyList()) }
     var productId by remember { mutableStateOf("") }
     var knowsProduct by remember { mutableStateOf("") }
     var isSelling by remember { mutableStateOf("") }
@@ -64,7 +65,7 @@ fun CustomersScreen(
         runCatching { products = api.products(activeOnly = true) }
     }
 
-    LaunchedEffect(search, customerType, productId, knowsProduct, isSelling, vendor, vendorCurrentOnly, refreshKey) {
+    LaunchedEffect(search, customerTypes, productId, knowsProduct, isSelling, vendor, vendorCurrentOnly, refreshKey) {
         delay(300)
         loading = true
         error = null
@@ -72,7 +73,7 @@ fun CustomersScreen(
             customers = api.customers(
                 CustomerQuery(
                     q = search.ifBlank { null },
-                    customerType = customerType.ifBlank { null },
+                    customerType = customerTypes.takeIf { it.isNotEmpty() }?.joinToString(","),
                     productId = productId.ifBlank { null },
                     knowsProduct = knowsProduct.ifBlank { null },
                     isSelling = isSelling.ifBlank { null },
@@ -114,11 +115,10 @@ fun CustomersScreen(
                     .padding(bottom = GuruSpacing.sm),
             )
             if (showFilters) {
-                FilterChipRow(
-                    options = listOf("" to "All types") + CustomerTypes.all.map { it to CustomerTypes.label(it) },
-                    selected = customerType,
-                    onSelect = { customerType = it },
-                    inset = true,
+                CustomerTypeChips(
+                    selected = customerTypes,
+                    onChange = { customerTypes = it },
+                    modifier = Modifier.padding(horizontal = GuruSpacing.screenHorizontal, vertical = GuruSpacing.sm),
                 )
                 if (products.isNotEmpty()) {
                     FilterChipRow(

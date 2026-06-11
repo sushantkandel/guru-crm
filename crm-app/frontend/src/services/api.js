@@ -10,6 +10,9 @@ function appPath(path) {
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
+  paramsSerializer: {
+    indexes: null,
+  },
 });
 
 api.interceptors.request.use((config) => {
