@@ -53,6 +53,7 @@ fun CustomersScreen(
     var knowsProduct by remember { mutableStateOf("") }
     var isSelling by remember { mutableStateOf("") }
     var vendor by remember { mutableStateOf("") }
+    var vendorCurrentOnly by remember { mutableStateOf(false) }
     var products by remember { mutableStateOf<List<ProductDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -63,7 +64,7 @@ fun CustomersScreen(
         runCatching { products = api.products(activeOnly = true) }
     }
 
-    LaunchedEffect(search, customerType, productId, knowsProduct, isSelling, vendor, refreshKey) {
+    LaunchedEffect(search, customerType, productId, knowsProduct, isSelling, vendor, vendorCurrentOnly, refreshKey) {
         delay(300)
         loading = true
         error = null
@@ -76,6 +77,7 @@ fun CustomersScreen(
                     knowsProduct = knowsProduct.ifBlank { null },
                     isSelling = isSelling.ifBlank { null },
                     vendor = vendor.ifBlank { null },
+                    vendorCurrentOnly = if (vendorCurrentOnly) "true" else null,
                 ),
             )
         } catch (e: Exception) {
@@ -145,6 +147,12 @@ fun CustomersScreen(
                     onValueChange = { vendor = it },
                     label = "Vendor name",
                     modifier = Modifier.padding(horizontal = GuruSpacing.screenHorizontal, vertical = GuruSpacing.sm),
+                )
+                FilterChipRow(
+                    options = listOf("false" to "All vendor sources", "true" to "Current vendors only"),
+                    selected = vendorCurrentOnly.toString(),
+                    onSelect = { vendorCurrentOnly = it == "true" },
+                    inset = true,
                 )
             }
             when {

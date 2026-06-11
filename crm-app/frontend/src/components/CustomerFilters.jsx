@@ -171,10 +171,12 @@ export default function CustomerFilters({ filters, onChange }) {
             checked={filters.vendor_current_only}
             onChange={(e) => onChange({ ...filters, vendor_current_only: e.target.checked })}
             className="rounded"
-            disabled={!filters.vendor}
           />
           Current vendors only
         </label>
+        <p className="w-full text-xs text-slate-500 -mt-2">
+          Limits vendor matches to sources marked current in the field survey. Combine with a vendor name and/or product for tighter results.
+        </p>
         <button
           type="button"
           onClick={() =>

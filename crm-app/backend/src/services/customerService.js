@@ -83,41 +83,34 @@ function buildCustomerWhere(query, user, companyId) {
     }
   }
 
-  const productFilters = [knows_product, is_selling].some((v) => v === 'true' || v === 'false');
-  if (productFilters && !product_id) {
-    // Require product_id when using product-scoped filters — handled by ignoring invalid combo
-  } else if (product_id && (productFilters || vendor)) {
-    const insightFilter = { productId: product_id };
-    if (knows_product === 'true') insightFilter.knowsProduct = true;
-    if (knows_product === 'false') insightFilter.knowsProduct = false;
-    if (is_selling === 'true') insightFilter.isSelling = true;
-    if (is_selling === 'false') insightFilter.isSelling = false;
+  const productScopedFilters = [knows_product, is_selling].some((v) => v === 'true' || v === 'false');
+  const vendorScopedFilters = Boolean(vendor) || vendor_current_only === 'true';
+  const hasInsightFilters = Boolean(product_id) || productScopedFilters || vendorScopedFilters;
 
-    if (vendor) {
-      const vendorFilter = {
-        vendorName: { contains: vendor, mode: 'insensitive' },
-      };
-      if (vendor_current_only === 'true') {
-        vendorFilter.isCurrent = true;
+  if (hasInsightFilters) {
+    if (productScopedFilters && !product_id) {
+      // knows_product / is_selling require product_id
+    } else {
+      const insightFilter = {};
+      if (product_id) insightFilter.productId = product_id;
+      if (knows_product === 'true') insightFilter.knowsProduct = true;
+      if (knows_product === 'false') insightFilter.knowsProduct = false;
+      if (is_selling === 'true') insightFilter.isSelling = true;
+      if (is_selling === 'false') insightFilter.isSelling = false;
+
+      if (vendorScopedFilters) {
+        const vendorSourceFilter = {};
+        if (vendor) {
+          vendorSourceFilter.vendorName = { contains: vendor, mode: 'insensitive' };
+        }
+        if (vendor_current_only === 'true') {
+          vendorSourceFilter.isCurrent = true;
+        }
+        insightFilter.vendorSources = { some: vendorSourceFilter };
       }
-      insightFilter.vendorSources = { some: vendorFilter };
-    }
 
-    where.AND.push({ productInsights: { some: insightFilter } });
-  } else if (product_id) {
-    where.AND.push({ productInsights: { some: { productId: product_id } } });
-  } else if (vendor) {
-    const vendorFilter = {
-      vendorName: { contains: vendor, mode: 'insensitive' },
-    };
-    if (vendor_current_only === 'true') {
-      vendorFilter.isCurrent = true;
+      where.AND.push({ productInsights: { some: insightFilter } });
     }
-    where.AND.push({
-      productInsights: {
-        some: { vendorSources: { some: vendorFilter } },
-      },
-    });
   }
 
   if (not_ordered_from && not_ordered_to) {
