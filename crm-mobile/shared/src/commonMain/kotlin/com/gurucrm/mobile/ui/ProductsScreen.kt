@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 fun ProductsScreen(
     api: GuruApi,
     user: UserDto,
+    listRefreshKey: Long = 0L,
     onAddProduct: () -> Unit,
     onEditProduct: (String) -> Unit,
 ) {
@@ -58,7 +59,7 @@ fun ProductsScreen(
     var refreshKey by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(refreshKey) {
+    LaunchedEffect(refreshKey, listRefreshKey) {
         loading = true
         error = null
         try {

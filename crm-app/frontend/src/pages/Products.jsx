@@ -55,7 +55,11 @@ export default function Products() {
       setForm(emptyForm);
       load();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create product');
+      const details = err.response?.data?.details;
+      const detailText = Array.isArray(details)
+        ? details.map((d) => d.message).join('; ')
+        : '';
+      setError(detailText || err.response?.data?.error || 'Failed to create product');
     } finally {
       setLoading(false);
     }
@@ -86,7 +90,11 @@ export default function Products() {
       setEditProduct(null);
       load();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to update product');
+      const details = err.response?.data?.details;
+      const detailText = Array.isArray(details)
+        ? details.map((d) => d.message).join('; ')
+        : '';
+      setError(detailText || err.response?.data?.error || 'Failed to update product');
     } finally {
       setLoading(false);
     }

@@ -43,6 +43,7 @@ export default function CustomerProductInsights({
   const [notes, setNotes] = useState('');
   const [vendors, setVendors] = useState([]);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -56,6 +57,14 @@ export default function CustomerProductInsights({
 
   useEffect(() => {
     load().catch((err) => setError(err.response?.data?.error || 'Failed to load field intelligence'));
+  }, [customerId]);
+
+  useEffect(() => {
+    const refresh = () => {
+      load().catch(() => {});
+    };
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
   }, [customerId]);
 
   const selectProduct = (productId) => {
@@ -92,10 +101,31 @@ export default function CustomerProductInsights({
 
   const editingExisting = insights.some((i) => i.productId === selectedProductId);
 
+  const canSave = Boolean(
+    selectedProductId &&
+    knowsProduct !== null &&
+    (knowsProduct === false || isSelling !== null) &&
+    !(knowsProduct === true && isSelling === false && !discontinuedReason.trim()),
+  );
+
   const save = async () => {
-    if (!selectedProductId || knowsProduct === null) return;
-    if (knowsProduct && isSelling === null) return;
-    if (knowsProduct && isSelling === false && !discontinuedReason.trim()) return;
+    setSuccess('');
+    if (!selectedProductId) {
+      setError('Select a product first.');
+      return;
+    }
+    if (knowsProduct === null) {
+      setError('Answer whether the shop knows this product.');
+      return;
+    }
+    if (knowsProduct && isSelling === null) {
+      setError('Answer whether the shop is still selling this product.');
+      return;
+    }
+    if (knowsProduct && isSelling === false && !discontinuedReason.trim()) {
+      setError('Enter why they stopped selling this product.');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -117,8 +147,13 @@ export default function CustomerProductInsights({
           })),
       });
       await load();
+      setSuccess(editingExisting ? 'Survey updated.' : 'Survey saved.');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save survey');
+      const details = err.response?.data?.details;
+      const detailText = Array.isArray(details)
+        ? details.map((d) => d.message).join('; ')
+        : '';
+      setError(detailText || err.response?.data?.error || 'Failed to save survey');
     } finally {
       setSaving(false);
     }
@@ -128,6 +163,11 @@ export default function CustomerProductInsights({
     <div className={pageCardPadded}>
       <h2 className={pageSectionTitle}>Field intelligence</h2>
       {error && <div className={formAlertError}>{error}</div>}
+      {success && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+          {success}
+        </div>
+      )}
 
       {insights.length > 0 && (
         <div className="mb-4 space-y-2">
@@ -347,9 +387,14 @@ export default function CustomerProductInsights({
                 />
               </div>
 
-              <button type="button" className={formBtnPrimary} disabled={saving} onClick={save}>
+              <button type="button" className={formBtnPrimary} disabled={saving || !canSave} onClick={save}>
                 {saving ? 'Saving…' : editingExisting ? 'Update survey' : 'Save survey'}
               </button>
+              {!canSave && selectedProductId && (
+                <p className="text-xs text-slate-500">
+                  Complete all required answers above to save this survey.
+                </p>
+              )}
             </>
           )}
         </div>

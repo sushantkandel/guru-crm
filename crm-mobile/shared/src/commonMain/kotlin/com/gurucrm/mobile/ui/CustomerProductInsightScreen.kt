@@ -132,7 +132,7 @@ fun CustomerProductInsightScreen(
         when {
             loading -> LoadingScreen()
             products.isEmpty() -> Text(
-                "Add products in Settings before recording field surveys.",
+                "Add an active product on the Products screen before recording field surveys.",
                 modifier = Modifier.padding(padding).padding(com.gurucrm.mobile.ui.theme.GuruSpacing.screenHorizontal),
             )
             else -> Column(

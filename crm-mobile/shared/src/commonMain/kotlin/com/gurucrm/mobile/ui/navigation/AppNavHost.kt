@@ -185,10 +185,12 @@ fun AppNavHost(
                 )
             }
             if (user.canManageProducts()) {
-                composable(TabRoute.Products.route) {
+                composable(TabRoute.Products.route) { entry ->
+                    val listRefreshKey = entry.savedStateHandle.get<Long>("products_refresh") ?: 0L
                     ProductsScreen(
                         api = api,
                         user = user,
+                        listRefreshKey = listRefreshKey,
                         onAddProduct = { navController.navigate("products/new") },
                         onEditProduct = { navController.navigate("products/edit/$it") },
                     )
@@ -241,7 +243,7 @@ fun AppNavHost(
                 ),
             ) { entry ->
                 val id = entry.savedStateHandle.get<String>("id") ?: return@composable
-                val productId = entry.arguments?.getString("productId").orEmpty().ifBlank { null }
+                val productId = entry.savedStateHandle.get<String>("productId").orEmpty().ifBlank { null }
                 CustomerProductInsightScreen(
                     api = api,
                     customerId = id,
@@ -319,7 +321,11 @@ fun AppNavHost(
                         user = user,
                         productId = null,
                         onBack = { navController.popBackStack() },
-                        onSaved = { navController.popBackStack() },
+                        onSaved = {
+                            navController.getBackStackEntry(TabRoute.Products.route)
+                                .savedStateHandle["products_refresh"] = System.currentTimeMillis()
+                            navController.popBackStack()
+                        },
                     )
                 }
                 composable("products/edit/{id}") { entry ->
@@ -329,7 +335,11 @@ fun AppNavHost(
                         user = user,
                         productId = id,
                         onBack = { navController.popBackStack() },
-                        onSaved = { navController.popBackStack() },
+                        onSaved = {
+                            navController.getBackStackEntry(TabRoute.Products.route)
+                                .savedStateHandle["products_refresh"] = System.currentTimeMillis()
+                            navController.popBackStack()
+                        },
                     )
                 }
             }
