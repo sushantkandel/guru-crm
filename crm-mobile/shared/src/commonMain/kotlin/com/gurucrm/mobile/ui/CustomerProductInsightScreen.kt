@@ -51,6 +51,7 @@ private data class VendorRow(
 fun CustomerProductInsightScreen(
     api: GuruApi,
     customerId: String,
+    initialProductId: String? = null,
     onBack: () -> Unit,
 ) {
     var loading by remember { mutableStateOf(true) }
@@ -58,6 +59,7 @@ fun CustomerProductInsightScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var products by remember { mutableStateOf<List<ProductDto>>(emptyList()) }
     var selectedProductId by remember { mutableStateOf<String?>(null) }
+    var isEditingExisting by remember { mutableStateOf(false) }
     var knowsProduct by remember { mutableStateOf<Boolean?>(null) }
     var isSelling by remember { mutableStateOf<Boolean?>(null) }
     var discontinuedReason by remember { mutableStateOf("") }
@@ -72,6 +74,7 @@ fun CustomerProductInsightScreen(
             try {
                 val insight = api.customerProductInsights(customerId).find { it.productId == productId }
                 if (insight != null) {
+                    isEditingExisting = true
                     knowsProduct = insight.knowsProduct
                     isSelling = insight.isSelling
                     discontinuedReason = insight.discontinuedReason.orEmpty()
@@ -89,6 +92,7 @@ fun CustomerProductInsightScreen(
                         },
                     )
                 } else {
+                    isEditingExisting = false
                     knowsProduct = null
                     isSelling = null
                     discontinuedReason = ""
@@ -107,9 +111,11 @@ fun CustomerProductInsightScreen(
         loading = true
         try {
             products = api.products(activeOnly = true)
-            if (products.size == 1) {
-                selectedProductId = products.first().id
-                loadInsight(products.first().id)
+            val preselect = initialProductId?.takeIf { id -> products.any { it.id == id } }
+                ?: products.singleOrNull()?.id
+            if (preselect != null) {
+                selectedProductId = preselect
+                loadInsight(preselect)
             } else {
                 loading = false
             }
@@ -119,7 +125,10 @@ fun CustomerProductInsightScreen(
         }
     }
 
-    GuruScaffold(title = "Field survey", onBack = onBack) { padding ->
+    GuruScaffold(
+        title = if (isEditingExisting) "Edit field survey" else "Field survey",
+        onBack = onBack,
+    ) { padding ->
         when {
             loading -> LoadingScreen()
             products.isEmpty() -> Text(
@@ -216,7 +225,13 @@ fun CustomerProductInsightScreen(
                         GuruFormActions {
                             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                             GuruPrimaryButton(
-                                text = if (saving) "Saving…" else "Save survey",
+                                text = if (saving) {
+                                    "Saving…"
+                                } else if (isEditingExisting) {
+                                    "Update survey"
+                                } else {
+                                    "Save survey"
+                                },
                                 enabled = !saving && knowsProduct != null &&
                                     (knowsProduct == false || isSelling != null) &&
                                     !(knowsProduct == true && isSelling == false && discontinuedReason.isBlank()),

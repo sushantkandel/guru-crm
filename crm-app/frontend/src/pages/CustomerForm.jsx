@@ -116,10 +116,11 @@ export default function CustomerForm() {
       };
       if (isEdit) {
         await api.put(`/customers/${id}`, payload);
+        navigate(`/customers/${id}?survey=1`);
       } else {
-        await api.post('/customers', payload);
+        const res = await api.post('/customers', payload);
+        navigate(`/customers/${res.data.id}?survey=1`);
       }
-      navigate('/customers');
     } catch (err) {
       const details = err.response?.data?.details;
       const detailText = Array.isArray(details)
@@ -140,6 +141,7 @@ export default function CustomerForm() {
       </h2>
       <p className={formSubtitle}>
         Each customer is a shop. Location uses Nepal province → district → municipality → ward.
+        {' After saving, you can add or update the field survey for product and vendor details.'}
       </p>
       {isEdit && <EditAudit record={auditRecord} className="mb-4" />}
 

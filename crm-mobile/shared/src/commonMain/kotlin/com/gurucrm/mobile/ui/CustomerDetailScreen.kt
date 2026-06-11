@@ -54,7 +54,7 @@ fun CustomerDetailScreen(
     onNewOrder: () -> Unit = {},
     onRecordPayment: () -> Unit = {},
     onOrderClick: (String) -> Unit = {},
-    onFieldSurvey: () -> Unit = {},
+    onFieldSurvey: (productId: String?) -> Unit = {},
 ) {
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -111,8 +111,8 @@ fun CustomerDetailScreen(
                     }
                     if (user.canEdit()) {
                         GuruOutlinedButton(
-                            text = "Field survey",
-                            onClick = onFieldSurvey,
+                            text = if (insights.isNotEmpty()) "Add / edit field survey" else "Field survey",
+                            onClick = { onFieldSurvey(null) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -126,8 +126,30 @@ fun CustomerDetailScreen(
                                 insight.isSelling == false -> "Not selling"
                                 else -> "Surveyed"
                             }
-                            Text("$productName — $status", style = MaterialTheme.typography.bodyMedium)
-                            insight.vendorSources.forEach { vendor ->
+                            Column(
+                                modifier = if (user.canEdit()) {
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onFieldSurvey(insight.productId) }
+                                        .padding(vertical = GuruSpacing.xs)
+                                } else {
+                                    Modifier.fillMaxWidth()
+                                },
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text("$productName — $status", style = MaterialTheme.typography.bodyMedium)
+                                    if (user.canEdit()) {
+                                        Text(
+                                            "Edit",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                                insight.vendorSources.forEach { vendor ->
                                 val price = vendor.purchasePrice?.let { " @ $it" }.orEmpty()
                                 val contact = vendor.vendorPhone?.let { " · $it" }.orEmpty()
                                 Text(
@@ -142,6 +164,7 @@ fun CustomerDetailScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
+                            }
                             }
                         }
                     }

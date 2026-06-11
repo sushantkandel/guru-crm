@@ -224,14 +224,28 @@ fun AppNavHost(
                     onNewOrder = { navController.navigate("orders/new?customerId=$id") },
                     onRecordPayment = { navController.navigate("payments/new?customerId=$id") },
                     onOrderClick = { navController.navigate("orders/$it") },
-                    onFieldSurvey = { navController.navigate("customers/$id/survey") },
+                    onFieldSurvey = { productId ->
+                        val route = if (productId.isNullOrBlank()) {
+                            "customers/$id/survey"
+                        } else {
+                            "customers/$id/survey?productId=$productId"
+                        }
+                        navController.navigate(route)
+                    },
                 )
             }
-            composable("customers/{id}/survey") { entry ->
+            composable(
+                route = "customers/{id}/survey?productId={productId}",
+                arguments = listOf(
+                    navArgument("productId") { type = NavType.StringType; defaultValue = "" },
+                ),
+            ) { entry ->
                 val id = entry.savedStateHandle.get<String>("id") ?: return@composable
+                val productId = entry.arguments?.getString("productId").orEmpty().ifBlank { null }
                 CustomerProductInsightScreen(
                     api = api,
                     customerId = id,
+                    initialProductId = productId,
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -243,7 +257,7 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() },
                     onSaved = { id ->
                         navController.popBackStack()
-                        navController.navigate("customers/$id")
+                        navController.navigate("customers/$id/survey")
                     },
                 )
             }
@@ -256,7 +270,7 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() },
                     onSaved = {
                         navController.popBackStack()
-                        navController.navigate("customers/$id")
+                        navController.navigate("customers/$id/survey")
                     },
                 )
             }

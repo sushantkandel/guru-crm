@@ -27,7 +27,12 @@ function vendorSummary(v) {
   return parts.join(' · ');
 }
 
-export default function CustomerProductInsights({ customerId, canEdit }) {
+export default function CustomerProductInsights({
+  customerId,
+  canEdit,
+  autoStart = false,
+  initialProductId = '',
+}) {
   const [products, setProducts] = useState([]);
   const [insights, setInsights] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -78,6 +83,14 @@ export default function CustomerProductInsights({ customerId, canEdit }) {
     );
   };
 
+  useEffect(() => {
+    if (!canEdit || products.length === 0 || selectedProductId) return;
+    const productId = initialProductId || (autoStart ? products[0]?.id : '');
+    if (productId) selectProduct(productId);
+  }, [autoStart, initialProductId, canEdit, products, selectedProductId]);
+
+  const editingExisting = insights.some((i) => i.productId === selectedProductId);
+
   const save = async () => {
     if (!selectedProductId || knowsProduct === null) return;
     if (knowsProduct && isSelling === null) return;
@@ -119,11 +132,24 @@ export default function CustomerProductInsights({ customerId, canEdit }) {
         <div className="mb-4 space-y-2">
           {insights.map((insight) => (
             <div key={insight.id} className="text-sm text-slate-700 border-b border-slate-100 pb-2">
-              <strong>{insight.product?.name || 'Product'}</strong>
-              {' — '}
-              {!insight.knowsProduct && 'Does not know product'}
-              {insight.knowsProduct && insight.isSelling && 'Still selling'}
-              {insight.knowsProduct && insight.isSelling === false && 'Not selling'}
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <strong>{insight.product?.name || 'Product'}</strong>
+                  {' — '}
+                  {!insight.knowsProduct && 'Does not know product'}
+                  {insight.knowsProduct && insight.isSelling && 'Still selling'}
+                  {insight.knowsProduct && insight.isSelling === false && 'Not selling'}
+                </div>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="text-sm text-blue-600 hover:underline shrink-0"
+                    onClick={() => selectProduct(insight.productId)}
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
               {insight.vendorSources?.length > 0 && (
                 <div className="text-slate-500 mt-1 space-y-1">
                   {insight.vendorSources.map((v) => (
@@ -143,6 +169,11 @@ export default function CustomerProductInsights({ customerId, canEdit }) {
 
       {canEdit && products.length > 0 && (
         <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            {insights.length > 0
+              ? 'Select a product below or tap Edit on a saved survey to update it.'
+              : 'Record product awareness, selling status, and vendor details for this visit.'}
+          </p>
           <div>
             <label className={formLabel}>Product</label>
             <select
@@ -309,7 +340,7 @@ export default function CustomerProductInsights({ customerId, canEdit }) {
               </div>
 
               <button type="button" className={formBtnPrimary} disabled={saving} onClick={save}>
-                {saving ? 'Saving…' : 'Save survey'}
+                {saving ? 'Saving…' : editingExisting ? 'Update survey' : 'Save survey'}
               </button>
             </>
           )}

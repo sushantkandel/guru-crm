@@ -71,7 +71,11 @@ fun CustomerFormScreen(
     val addressText = listOfNotNull(street.takeIf { it.isNotBlank() }, location.ward.takeIf { it.isNotBlank() }?.let { "Ward $it" },
         location.municipality.takeIf { it.isNotBlank() }, location.district.takeIf { it.isNotBlank() }, location.province.takeIf { it.isNotBlank() }, "Nepal").joinToString(", ")
 
-    GuruScaffold(title = if (isEdit) "Edit customer" else "New customer", onBack = onBack) { padding ->
+    GuruScaffold(
+        title = if (isEdit) "Edit customer" else "New customer",
+        subtitle = "After saving, you can add or update the field survey.",
+        onBack = onBack,
+    ) { padding ->
         when {
             loading -> LoadingScreen()
             else -> Column(

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -58,6 +58,9 @@ const statusLabels = {
 export default function CustomerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [showSurveyPrompt, setShowSurveyPrompt] = useState(() => searchParams.get('survey') === '1');
+  const [surveyProductId, setSurveyProductId] = useState(() => searchParams.get('product') || '');
   const [customer, setCustomer] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState(null);
   const [requestDelete, setRequestDelete] = useState(null);
@@ -67,6 +70,19 @@ export default function CustomerDetail() {
   const load = () => api.get(`/customers/${id}`).then((res) => setCustomer(res.data));
 
   useEffect(() => { load(); }, [id]);
+
+  useEffect(() => {
+    if (searchParams.get('survey') !== '1') return;
+    setShowSurveyPrompt(true);
+    const product = searchParams.get('product');
+    if (product) setSurveyProductId(product);
+    navigate(product ? `/customers/${id}?product=${product}` : `/customers/${id}`, { replace: true });
+  }, [searchParams, id, navigate]);
+
+  useEffect(() => {
+    if (!showSurveyPrompt || !customer) return;
+    document.getElementById('field-intelligence')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [showSurveyPrompt, customer]);
 
   const handleDeleteCustomer = async () => {
     setDeleting(true);
@@ -231,7 +247,20 @@ export default function CustomerDetail() {
         </div>
       </div>
 
-      <CustomerProductInsights customerId={id} canEdit={canEdit} />
+      {showSurveyPrompt && canEdit && (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          Shop saved. Add or update the field survey below — product awareness, vendors, and prices.
+        </div>
+      )}
+
+      <div id="field-intelligence">
+        <CustomerProductInsights
+          customerId={id}
+          canEdit={canEdit}
+          autoStart={showSurveyPrompt}
+          initialProductId={surveyProductId}
+        />
+      </div>
 
       <div className={`${pageCardPadded} mb-4`}>
         <h3 className={`${pageSectionTitle} mb-4`}>Orders</h3>
