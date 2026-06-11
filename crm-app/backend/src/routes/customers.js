@@ -4,8 +4,14 @@ const prisma = require('../config/prisma');
 const { authMiddleware, roleGuard } = require('../middleware/auth');
 const { tenantMiddleware, ownerOnlyDelete } = require('../middleware/tenant');
 const { listCustomers } = require('../services/customerService');
+const {
+  listCustomerProductInsights,
+  upsertCustomerProductInsight,
+  listVendorNames,
+} = require('../services/customerInsightService');
 const { getCustomerBalance } = require('../services/balanceService');
 const { shopAddressSchema } = require('../schemas/companyAddress');
+const { customerTypeSchema, productInsightSchema } = require('../schemas/customerInsight');
 const { auditInclude, auditOnCreate, auditOnUpdate } = require('../utils/audit');
 
 const router = express.Router();
@@ -19,6 +25,7 @@ const customerSchema = z.object({
   shopName: z.string().min(1),
   panVatNumber: z.preprocess(emptyToNull, z.string().optional().nullable()),
   businessStatus: z.enum(['converted', 'not_converted', 'just_visited']).default('just_visited'),
+  customerTypes: z.array(customerTypeSchema).default([]),
   assignedTo: z.preprocess(emptyToNull, z.string().uuid().optional().nullable()),
   address: shopAddressSchema,
 });
@@ -34,6 +41,65 @@ router.get('/', async (req, res, next) => {
   try {
     const customers = await listCustomers(req.query, req.user, req.companyId);
     res.json(customers);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/vendor-names', async (req, res, next) => {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    const names = await listVendorNames(req.companyId, q);
+    res.json(names);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/product-insights', async (req, res, next) => {
+  try {
+    const customer = await prisma.customer.findFirst({
+      where: { id: req.params.id, companyId: req.companyId },
+    });
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    if (!canAccessCustomer(req.user, customer)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const insights = await listCustomerProductInsights(req.params.id, req.companyId);
+    res.json(insights);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/:id/product-insights/:productId', roleGuard('owner', 'staff'), async (req, res, next) => {
+  try {
+    const customer = await prisma.customer.findFirst({
+      where: { id: req.params.id, companyId: req.companyId },
+    });
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    if (!canAccessCustomer(req.user, customer)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const data = productInsightSchema.parse(req.body);
+    const result = await upsertCustomerProductInsight(
+      req.params.id,
+      req.params.productId,
+      req.companyId,
+      data,
+    );
+
+    if (!result) return res.status(404).json({ error: 'Customer not found' });
+    if (result.error) return res.status(404).json({ error: result.error });
+
+    await prisma.customer.update({
+      where: { id: req.params.id },
+      data: auditOnUpdate(req.user.id),
+    });
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -93,6 +159,7 @@ router.post('/', roleGuard('owner', 'staff'), async (req, res, next) => {
         shopName: data.shopName,
         panVatNumber: data.panVatNumber,
         businessStatus: data.businessStatus,
+        customerTypes: data.customerTypes,
         assignedTo,
         ...auditOnCreate(req.user.id),
         addresses: {
@@ -139,6 +206,7 @@ router.put('/:id', roleGuard('owner', 'staff'), async (req, res, next) => {
         shopName: data.shopName,
         panVatNumber: data.panVatNumber,
         businessStatus: data.businessStatus,
+        customerTypes: data.customerTypes,
         assignedTo:
           req.user.role === 'owner' ? data.assignedTo : existing.assignedTo,
         ...auditOnUpdate(req.user.id),

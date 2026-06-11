@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import NepalLocationSelect from '../components/NepalLocationSelect';
 import EditAudit from '../components/EditAudit';
 import MapPicker from '../components/MapPicker';
+import { CUSTOMER_TYPES } from '../constants/customerTypes';
 import {
   formPage,
   formPageWide,
@@ -35,6 +36,7 @@ export default function CustomerForm() {
     shopName: '',
     panVatNumber: '',
     businessStatus: 'just_visited',
+    customerTypes: [],
     assignedTo: '',
     address: {
       province: '',
@@ -66,6 +68,7 @@ export default function CustomerForm() {
           shopName: c.shopName,
           panVatNumber: c.panVatNumber || '',
           businessStatus: c.businessStatus || 'just_visited',
+          customerTypes: c.customerTypes || [],
           assignedTo: c.assignedTo || '',
           address: {
             province: addr.province || '',
@@ -183,6 +186,37 @@ export default function CustomerForm() {
             <option value="just_visited">Just Visited — first visit / lead only</option>
           </select>
           <p className={formHint}>Track whether a visited shop has become a paying customer.</p>
+        </div>
+
+        <div>
+          <label className={formLabel}>Shop type</label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {CUSTOMER_TYPES.map((type) => {
+              const selected = form.customerTypes.includes(type.value);
+              return (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => {
+                    setForm((prev) => ({
+                      ...prev,
+                      customerTypes: selected
+                        ? prev.customerTypes.filter((t) => t !== type.value)
+                        : [...prev.customerTypes, type.value],
+                    }));
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-sm border ${
+                    selected
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  {type.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className={formHint}>Select all that apply — retailer, wholesaler, etc.</p>
         </div>
 
         {isOwner && (

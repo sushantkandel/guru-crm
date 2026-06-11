@@ -77,6 +77,18 @@ function dateVal(v) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function arrayToCsv(arr) {
+  return (arr || []).join('|');
+}
+
+function csvToArray(value) {
+  if (!value) return [];
+  return String(value)
+    .split('|')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 async function loadCompanyExportData(companyId) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) throw new Error('Company not found');
@@ -104,11 +116,48 @@ async function loadCompanyExportData(companyId) {
 
   const payments = await prisma.payment.findMany({ where: { companyId }, orderBy: { paymentDate: 'asc' } });
 
-  return { company, users, products, customers, addresses, orders, orderItems, payments };
+  const productInsights = customerIds.length
+    ? await prisma.customerProductInsight.findMany({
+        where: { customerId: { in: customerIds } },
+        orderBy: { updatedAt: 'asc' },
+      })
+    : [];
+
+  const insightIds = productInsights.map((i) => i.id);
+  const vendorSources = insightIds.length
+    ? await prisma.customerVendorSource.findMany({
+        where: { insightId: { in: insightIds } },
+        orderBy: { sortOrder: 'asc' },
+      })
+    : [];
+
+  return {
+    company,
+    users,
+    products,
+    customers,
+    addresses,
+    orders,
+    orderItems,
+    payments,
+    productInsights,
+    vendorSources,
+  };
 }
 
 function buildCsvFiles(data) {
-  const { company, users, products, customers, addresses, orders, orderItems, payments } = data;
+  const {
+    company,
+    users,
+    products,
+    customers,
+    addresses,
+    orders,
+    orderItems,
+    payments,
+    productInsights,
+    vendorSources,
+  } = data;
 
   const companyRows = [
     {
@@ -148,6 +197,7 @@ function buildCsvFiles(data) {
     shop_name: c.shopName,
     pan_vat_number: c.panVatNumber || '',
     business_status: c.businessStatus,
+    customer_types: arrayToCsv(c.customerTypes),
     assigned_to: c.assignedTo || '',
     created_by: c.createdBy || '',
     updated_by: c.updatedBy || '',
@@ -211,6 +261,30 @@ function buildCsvFiles(data) {
     updated_at: p.updatedAt.toISOString(),
   }));
 
+  const insightRows = productInsights.map((i) => ({
+    id: i.id,
+    customer_id: i.customerId,
+    product_id: i.productId,
+    knows_product: i.knowsProduct,
+    is_selling: i.isSelling === null ? '' : i.isSelling,
+    discontinued_reason: i.discontinuedReason || '',
+    notes: i.notes || '',
+    last_surveyed_at: i.lastSurveyedAt ? i.lastSurveyedAt.toISOString() : '',
+    created_at: i.createdAt.toISOString(),
+    updated_at: i.updatedAt.toISOString(),
+  }));
+
+  const vendorRows = vendorSources.map((v) => ({
+    id: v.id,
+    insight_id: v.insightId,
+    vendor_name: v.vendorName,
+    vendor_address: v.vendorAddress || '',
+    vendor_phone: v.vendorPhone || '',
+    purchase_price: v.purchasePrice ?? '',
+    is_current: v.isCurrent,
+    sort_order: v.sortOrder,
+  }));
+
   const counts = {
     users: userRows.length,
     products: productRows.length,
@@ -219,6 +293,8 @@ function buildCsvFiles(data) {
     orders: orderRows.length,
     order_items: orderItemRows.length,
     payments: paymentRows.length,
+    product_insights: insightRows.length,
+    vendor_sources: vendorRows.length,
   };
 
   const manifest = {
@@ -242,7 +318,7 @@ function buildCsvFiles(data) {
       ]),
       'customers.csv': toCsv(customerRows, [
         'id', 'name', 'phone', 'email', 'shop_name', 'pan_vat_number', 'business_status',
-        'assigned_to', 'created_by', 'updated_by', 'created_at', 'updated_at',
+        'customer_types', 'assigned_to', 'created_by', 'updated_by', 'created_at', 'updated_at',
       ]),
       'addresses.csv': toCsv(addressRows, [
         'id', 'customer_id', 'province', 'district', 'municipality', 'ward', 'street',
@@ -259,6 +335,14 @@ function buildCsvFiles(data) {
         'id', 'customer_id', 'order_id', 'payment_type', 'amount', 'payment_date', 'status',
         'cheque_number', 'bank_name', 'qr_reference', 'qr_provider', 'credit_due_date',
         'created_by', 'updated_by', 'created_at', 'updated_at',
+      ]),
+      'customer_product_insights.csv': toCsv(insightRows, [
+        'id', 'customer_id', 'product_id', 'knows_product', 'is_selling', 'discontinued_reason',
+        'notes', 'last_surveyed_at', 'created_at', 'updated_at',
+      ]),
+      'customer_vendor_sources.csv': toCsv(vendorRows, [
+        'id', 'insight_id', 'vendor_name', 'vendor_address', 'vendor_phone',
+        'purchase_price', 'is_current', 'sort_order',
       ]),
     },
   };
@@ -346,7 +430,7 @@ function validateBackupData(parsed, companyId) {
   ]);
   const customers = parseCsv(parsed.csv['customers.csv'], [
     'id', 'name', 'phone', 'email', 'shop_name', 'pan_vat_number', 'business_status',
-    'assigned_to', 'created_by', 'updated_by', 'created_at', 'updated_at',
+    'customer_types', 'assigned_to', 'created_by', 'updated_by', 'created_at', 'updated_at',
   ]);
   const addresses = parseCsv(parsed.csv['addresses.csv'], [
     'id', 'customer_id', 'province', 'district', 'municipality', 'ward', 'street',
@@ -364,6 +448,20 @@ function validateBackupData(parsed, companyId) {
     'cheque_number', 'bank_name', 'qr_reference', 'qr_provider', 'credit_due_date',
     'created_by', 'updated_by', 'created_at', 'updated_at',
   ]);
+
+  const productInsights = parsed.csv['customer_product_insights.csv']
+    ? parseCsv(parsed.csv['customer_product_insights.csv'], [
+        'id', 'customer_id', 'product_id', 'knows_product', 'is_selling', 'discontinued_reason',
+        'notes', 'last_surveyed_at', 'created_at', 'updated_at',
+      ])
+    : [];
+
+  const vendorSources = parsed.csv['customer_vendor_sources.csv']
+    ? parseCsv(parsed.csv['customer_vendor_sources.csv'], [
+        'id', 'insight_id', 'vendor_name', 'vendor_address', 'vendor_phone',
+        'purchase_price', 'is_current', 'sort_order',
+      ])
+    : [];
 
   const customerIds = new Set(customers.map((c) => c.id));
   for (const a of addresses) {
@@ -383,7 +481,18 @@ function validateBackupData(parsed, companyId) {
     valid: true,
     manifest,
     warnings,
-    tables: { company, users, products, customers, addresses, orders, orderItems, payments },
+    tables: {
+      company,
+      users,
+      products,
+      customers,
+      addresses,
+      orders,
+      orderItems,
+      payments,
+      productInsights,
+      vendorSources,
+    },
   };
 }
 
@@ -493,6 +602,7 @@ async function restoreCompanyBackup(companyId, ownerUserId, parsed) {
           shopName: row.shop_name,
           panVatNumber: row.pan_vat_number || null,
           businessStatus: row.business_status || 'just_visited',
+          customerTypes: csvToArray(row.customer_types),
           assignedTo: mapUserId(row.assigned_to, userIdMap),
           createdBy: mapUserId(row.created_by, userIdMap),
           updatedBy: mapUserId(row.updated_by, userIdMap),
@@ -515,6 +625,38 @@ async function restoreCompanyBackup(companyId, ownerUserId, parsed) {
           latitude: numVal(row.latitude),
           longitude: numVal(row.longitude),
           isPrimary: boolVal(row.is_primary),
+        },
+      });
+    }
+
+    for (const row of tables.productInsights || []) {
+      await tx.customerProductInsight.create({
+        data: {
+          id: row.id,
+          customerId: row.customer_id,
+          productId: row.product_id,
+          knowsProduct: boolVal(row.knows_product),
+          isSelling: row.is_selling === '' || row.is_selling === null ? null : boolVal(row.is_selling),
+          discontinuedReason: row.discontinued_reason || null,
+          notes: row.notes || null,
+          lastSurveyedAt: dateVal(row.last_surveyed_at),
+          createdAt: dateVal(row.created_at) || new Date(),
+          updatedAt: dateVal(row.updated_at) || new Date(),
+        },
+      });
+    }
+
+    for (const row of tables.vendorSources || []) {
+      await tx.customerVendorSource.create({
+        data: {
+          id: row.id,
+          insightId: row.insight_id,
+          vendorName: row.vendor_name,
+          vendorAddress: row.vendor_address?.trim() || null,
+          vendorPhone: row.vendor_phone?.trim() || null,
+          purchasePrice: numVal(row.purchase_price),
+          isCurrent: boolVal(row.is_current),
+          sortOrder: numVal(row.sort_order) ?? 0,
         },
       });
     }

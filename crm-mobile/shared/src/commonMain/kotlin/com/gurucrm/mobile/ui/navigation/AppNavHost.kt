@@ -39,6 +39,7 @@ import com.gurucrm.mobile.ui.components.GuruBottomNav
 import com.gurucrm.mobile.ui.components.GuruBottomNavItem
 import com.gurucrm.mobile.ui.BackupRestoreScreen
 import com.gurucrm.mobile.ui.CustomerDetailScreen
+import com.gurucrm.mobile.ui.CustomerProductInsightScreen
 import com.gurucrm.mobile.ui.CustomerFormScreen
 import com.gurucrm.mobile.ui.CustomersScreen
 import com.gurucrm.mobile.ui.DashboardScreen
@@ -223,6 +224,15 @@ fun AppNavHost(
                     onNewOrder = { navController.navigate("orders/new?customerId=$id") },
                     onRecordPayment = { navController.navigate("payments/new?customerId=$id") },
                     onOrderClick = { navController.navigate("orders/$it") },
+                    onFieldSurvey = { navController.navigate("customers/$id/survey") },
+                )
+            }
+            composable("customers/{id}/survey") { entry ->
+                val id = entry.savedStateHandle.get<String>("id") ?: return@composable
+                CustomerProductInsightScreen(
+                    api = api,
+                    customerId = id,
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable("customers/new") {

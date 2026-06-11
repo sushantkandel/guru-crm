@@ -111,6 +111,7 @@ data class CustomerDto(
     val email: String? = null,
     val shopName: String,
     val businessStatus: String? = null,
+    val customerTypes: List<String> = emptyList(),
     val address: AddressDto? = null,
     val balance: BalanceDto = BalanceDto(),
     val pendingOrderCount: Int = 0,
@@ -126,6 +127,7 @@ data class CustomerDetailDto(
     val shopName: String,
     val panVatNumber: String? = null,
     val businessStatus: String? = null,
+    val customerTypes: List<String> = emptyList(),
     val addresses: List<AddressDto> = emptyList(),
     val balance: BalanceDto = BalanceDto(),
     val orders: List<OrderDto> = emptyList(),
@@ -279,6 +281,11 @@ data class CustomerQuery(
     val municipality: String? = null,
     val ward: String? = null,
     @SerialName("product_id") val productId: String? = null,
+    @SerialName("customer_type") val customerType: String? = null,
+    @SerialName("knows_product") val knowsProduct: String? = null,
+    @SerialName("is_selling") val isSelling: String? = null,
+    val vendor: String? = null,
+    @SerialName("vendor_current_only") val vendorCurrentOnly: String? = null,
 )
 
 @Serializable
@@ -301,8 +308,60 @@ data class CustomerUpsertRequest(
     val shopName: String,
     val panVatNumber: String? = null,
     val businessStatus: String = "just_visited",
+    val customerTypes: List<String> = emptyList(),
     val assignedTo: String? = null,
     val address: CustomerAddressInput,
+)
+
+@Serializable
+data class ProductInsightProductDto(
+    val id: String,
+    val name: String,
+    val productCode: String? = null,
+)
+
+@Serializable
+data class VendorSourceDto(
+    val id: String? = null,
+    val vendorName: String,
+    val vendorAddress: String? = null,
+    val vendorPhone: String? = null,
+    val purchasePrice: Double? = null,
+    val isCurrent: Boolean = true,
+    val sortOrder: Int = 0,
+)
+
+@Serializable
+data class CustomerProductInsightDto(
+    val id: String,
+    val customerId: String,
+    val productId: String,
+    val product: ProductInsightProductDto? = null,
+    val knowsProduct: Boolean,
+    val isSelling: Boolean? = null,
+    val discontinuedReason: String? = null,
+    val notes: String? = null,
+    val lastSurveyedAt: String? = null,
+    val vendorSources: List<VendorSourceDto> = emptyList(),
+)
+
+@Serializable
+data class VendorSourceInput(
+    val vendorName: String,
+    val vendorAddress: String? = null,
+    val vendorPhone: String? = null,
+    val purchasePrice: Double? = null,
+    val isCurrent: Boolean = true,
+    val sortOrder: Int = 0,
+)
+
+@Serializable
+data class ProductInsightUpsertRequest(
+    val knowsProduct: Boolean,
+    val isSelling: Boolean? = null,
+    val discontinuedReason: String? = null,
+    val notes: String? = null,
+    val vendorSources: List<VendorSourceInput> = emptyList(),
 )
 
 @Serializable

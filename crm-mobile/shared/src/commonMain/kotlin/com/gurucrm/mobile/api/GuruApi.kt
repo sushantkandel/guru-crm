@@ -6,7 +6,9 @@ import com.gurucrm.mobile.data.BackupPreviewDto
 import com.gurucrm.mobile.data.BackupRestoreResultDto
 import com.gurucrm.mobile.data.CustomerDetailDto
 import com.gurucrm.mobile.data.CustomerDto
+import com.gurucrm.mobile.data.CustomerProductInsightDto
 import com.gurucrm.mobile.data.CustomerQuery
+import com.gurucrm.mobile.data.ProductInsightUpsertRequest
 import com.gurucrm.mobile.data.CustomerUpsertRequest
 import com.gurucrm.mobile.data.GeocodeRequest
 import com.gurucrm.mobile.data.GeocodeResponse
@@ -296,11 +298,32 @@ class GuruApi(private val tokenStore: TokenStore) {
             query.district?.takeIf { it.isNotBlank() }?.let { put("district", it) }
             query.municipality?.takeIf { it.isNotBlank() }?.let { put("municipality", it) }
             query.ward?.takeIf { it.isNotBlank() }?.let { put("ward", it) }
+            query.productId?.takeIf { it.isNotBlank() }?.let { put("product_id", it) }
+            query.customerType?.takeIf { it.isNotBlank() }?.let { put("customer_type", it) }
+            query.knowsProduct?.takeIf { it.isNotBlank() }?.let { put("knows_product", it) }
+            query.isSelling?.takeIf { it.isNotBlank() }?.let { put("is_selling", it) }
+            query.vendor?.takeIf { it.isNotBlank() }?.let { put("vendor", it) }
+            query.vendorCurrentOnly?.takeIf { it.isNotBlank() }?.let { put("vendor_current_only", it) }
         }
         return authorizedGet("/customers", params)
     }
 
     suspend fun customer(id: String): CustomerDetailDto = authorizedGet("/customers/$id")
+
+    suspend fun customerProductInsights(customerId: String): List<CustomerProductInsightDto> =
+        authorizedGet("/customers/$customerId/product-insights")
+
+    suspend fun upsertCustomerProductInsight(
+        customerId: String,
+        productId: String,
+        body: ProductInsightUpsertRequest,
+    ): CustomerProductInsightDto =
+        authorizedPut("/customers/$customerId/product-insights/$productId", body)
+
+    suspend fun vendorNames(q: String = ""): List<String> {
+        val params = if (q.isBlank()) emptyMap() else mapOf("q" to q)
+        return authorizedGet("/customers/vendor-names", params)
+    }
 
     suspend fun createCustomer(body: CustomerUpsertRequest): String =
         authorizedPost<CustomerDto>("/customers", body).id

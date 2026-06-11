@@ -20,6 +20,7 @@ import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.CustomerAddressInput
 import com.gurucrm.mobile.data.CustomerUpsertRequest
 import com.gurucrm.mobile.platform.PlatformServices
+import com.gurucrm.mobile.ui.components.CustomerTypeChips
 import com.gurucrm.mobile.ui.components.GuruFormActions
 import com.gurucrm.mobile.ui.components.GuruFormColumn
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
@@ -46,6 +47,7 @@ fun CustomerFormScreen(
     var email by remember { mutableStateOf("") }
     var shopName by remember { mutableStateOf("") }
     var panVat by remember { mutableStateOf("") }
+    var customerTypes by remember { mutableStateOf<List<String>>(emptyList()) }
     var street by remember { mutableStateOf("") }
     var location by remember { mutableStateOf(NepalLocationState()) }
     var latitude by remember { mutableStateOf<Double?>(null) }
@@ -59,7 +61,7 @@ fun CustomerFormScreen(
             val c = api.customer(customerId)
             val addr = c.addresses.firstOrNull()
             name = c.name; phone = c.phone; email = c.email.orEmpty(); shopName = c.shopName
-            panVat = c.panVatNumber.orEmpty(); street = addr?.street.orEmpty()
+            panVat = c.panVatNumber.orEmpty(); customerTypes = c.customerTypes; street = addr?.street.orEmpty()
             location = NepalLocationState(addr?.province.orEmpty(), addr?.district.orEmpty(), addr?.municipality.orEmpty(), addr?.ward.orEmpty())
             latitude = addr?.latitude; longitude = addr?.longitude
         } catch (e: Exception) { error = e.message }
@@ -81,6 +83,10 @@ fun CustomerFormScreen(
                     GuruTextField(value = phone, onValueChange = { phone = it }, label = "Phone")
                     GuruTextField(value = email, onValueChange = { email = it }, label = "Email (optional)")
                     GuruTextField(value = panVat, onValueChange = { panVat = it }, label = "PAN/VAT (optional)")
+                    CustomerTypeChips(
+                        selected = customerTypes,
+                        onChange = { customerTypes = it },
+                    )
                     GuruTextField(value = street, onValueChange = { street = it }, label = "Street (optional)")
 
                     GuruSectionTitle("Address")
@@ -103,6 +109,7 @@ fun CustomerFormScreen(
                                         val payload = CustomerUpsertRequest(
                                             name = name.trim(), phone = phone.trim(), email = email.trim().ifBlank { null },
                                             shopName = shopName.trim(), panVatNumber = panVat.trim().ifBlank { null },
+                                            customerTypes = customerTypes,
                                             address = CustomerAddressInput(location.province, location.district, location.municipality, location.ward,
                                                 street.trim().ifBlank { null }, latitude, longitude),
                                         )

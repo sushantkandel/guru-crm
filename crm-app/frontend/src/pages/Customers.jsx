@@ -31,6 +31,12 @@ const defaultFilters = {
   municipality: '',
   ward: '',
   business_status: '',
+  customer_type: [],
+  product_id: '',
+  knows_product: '',
+  is_selling: '',
+  vendor: '',
+  vendor_current_only: false,
   has_remaining_payment: false,
   has_pending_orders: false,
   not_ordered_from: '',
@@ -76,6 +82,12 @@ export default function Customers() {
     if (filters.municipality) params.municipality = filters.municipality;
     if (filters.ward) params.ward = filters.ward;
     if (filters.business_status) params.business_status = filters.business_status;
+    if (filters.customer_type.length) params.customer_type = filters.customer_type;
+    if (filters.product_id) params.product_id = filters.product_id;
+    if (filters.knows_product) params.knows_product = filters.knows_product;
+    if (filters.is_selling) params.is_selling = filters.is_selling;
+    if (filters.vendor) params.vendor = filters.vendor;
+    if (filters.vendor_current_only) params.vendor_current_only = 'true';
     if (filters.has_remaining_payment) params.has_remaining_payment = 'true';
     if (filters.has_pending_orders) params.has_pending_orders = 'true';
     if (filters.not_ordered_from) params.not_ordered_from = filters.not_ordered_from;

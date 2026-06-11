@@ -8,6 +8,8 @@ import EditAudit, { LastEditedBy } from '../components/EditAudit';
 import GoogleMapsDirectionsButton from '../components/GoogleMapsDirectionsButton';
 import ShopRouteMap from '../components/ShopRouteMap';
 import PageHeader from '../components/PageHeader';
+import CustomerProductInsights from '../components/CustomerProductInsights';
+import { customerTypeLabel } from '../constants/customerTypes';
 import { resolveShopCoords } from '../utils/mapLinks';
 import {
   pageShell,
@@ -184,6 +186,11 @@ export default function CustomerDetail() {
         {customer.panVatNumber && (
           <span className="text-xs text-slate-500">PAN/VAT: {customer.panVatNumber}</span>
         )}
+        {(customer.customerTypes || []).map((type) => (
+          <span key={type} className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            {customerTypeLabel(type)}
+          </span>
+        ))}
         <EditAudit record={customer} />
       </div>
 
@@ -223,6 +230,8 @@ export default function CustomerDetail() {
           </p>
         </div>
       </div>
+
+      <CustomerProductInsights customerId={id} canEdit={canEdit} />
 
       <div className={`${pageCardPadded} mb-4`}>
         <h3 className={`${pageSectionTitle} mb-4`}>Orders</h3>

@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.CustomerDetailDto
+import com.gurucrm.mobile.data.CustomerProductInsightDto
+import com.gurucrm.mobile.data.CustomerTypes
 import com.gurucrm.mobile.data.MapMarker
 import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.platform.OsmMapView
@@ -52,10 +54,12 @@ fun CustomerDetailScreen(
     onNewOrder: () -> Unit = {},
     onRecordPayment: () -> Unit = {},
     onOrderClick: (String) -> Unit = {},
+    onFieldSurvey: () -> Unit = {},
 ) {
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var customer by remember { mutableStateOf<CustomerDetailDto?>(null) }
+    var insights by remember { mutableStateOf<List<CustomerProductInsightDto>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(customerId) {
@@ -63,6 +67,7 @@ fun CustomerDetailScreen(
         error = null
         try {
             customer = api.customer(customerId)
+            insights = api.customerProductInsights(customerId)
         } catch (e: Exception) {
             error = e.message
         } finally {
@@ -97,6 +102,49 @@ fun CustomerDetailScreen(
                 ) {
                     Text(c.phone, style = MaterialTheme.typography.bodyMedium)
                     c.businessStatus?.let { StatusBadge(it) }
+                    if (c.customerTypes.isNotEmpty()) {
+                        Text(
+                            c.customerTypes.joinToString(", ") { CustomerTypes.label(it) },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (user.canEdit()) {
+                        GuruOutlinedButton(
+                            text = "Field survey",
+                            onClick = onFieldSurvey,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    if (insights.isNotEmpty()) {
+                        GuruSectionTitle("Field intelligence")
+                        insights.forEach { insight ->
+                            val productName = insight.product?.name ?: "Product"
+                            val status = when {
+                                !insight.knowsProduct -> "Does not know product"
+                                insight.isSelling == true -> "Still selling"
+                                insight.isSelling == false -> "Not selling"
+                                else -> "Surveyed"
+                            }
+                            Text("$productName — $status", style = MaterialTheme.typography.bodyMedium)
+                            insight.vendorSources.forEach { vendor ->
+                                val price = vendor.purchasePrice?.let { " @ $it" }.orEmpty()
+                                val contact = vendor.vendorPhone?.let { " · $it" }.orEmpty()
+                                Text(
+                                    "• ${vendor.vendorName}$price$contact",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                vendor.vendorAddress?.takeIf { it.isNotBlank() }?.let { address ->
+                                    Text(
+                                        "  $address",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
                     if (addr != null) {
                         Text(
                             "${addr.municipality}, Ward ${addr.ward}, ${addr.district}",

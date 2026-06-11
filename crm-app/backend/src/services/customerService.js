@@ -1,6 +1,7 @@
 const prisma = require('../config/prisma');
 const { getCustomerBalances } = require('./balanceService');
 const { auditInclude } = require('../utils/audit');
+const { CUSTOMER_TYPES } = require('../schemas/customerInsight');
 
 function buildCustomerWhere(query, user, companyId) {
   const {
@@ -15,6 +16,12 @@ function buildCustomerWhere(query, user, companyId) {
     not_ordered_from,
     not_ordered_to,
     business_status,
+    customer_type,
+    product_id,
+    knows_product,
+    is_selling,
+    vendor,
+    vendor_current_only,
   } = query;
 
   const where = { AND: [{ companyId }] };
@@ -66,6 +73,53 @@ function buildCustomerWhere(query, user, companyId) {
     where.AND.push({ businessStatus: business_status });
   }
 
+  if (customer_type) {
+    const types = (Array.isArray(customer_type) ? customer_type : [customer_type])
+      .filter((t) => CUSTOMER_TYPES.includes(t));
+    if (types.length === 1) {
+      where.AND.push({ customerTypes: { has: types[0] } });
+    } else if (types.length > 1) {
+      where.AND.push({ OR: types.map((t) => ({ customerTypes: { has: t } })) });
+    }
+  }
+
+  const productFilters = [knows_product, is_selling].some((v) => v === 'true' || v === 'false');
+  if (productFilters && !product_id) {
+    // Require product_id when using product-scoped filters — handled by ignoring invalid combo
+  } else if (product_id && (productFilters || vendor)) {
+    const insightFilter = { productId: product_id };
+    if (knows_product === 'true') insightFilter.knowsProduct = true;
+    if (knows_product === 'false') insightFilter.knowsProduct = false;
+    if (is_selling === 'true') insightFilter.isSelling = true;
+    if (is_selling === 'false') insightFilter.isSelling = false;
+
+    if (vendor) {
+      const vendorFilter = {
+        vendorName: { contains: vendor, mode: 'insensitive' },
+      };
+      if (vendor_current_only === 'true') {
+        vendorFilter.isCurrent = true;
+      }
+      insightFilter.vendorSources = { some: vendorFilter };
+    }
+
+    where.AND.push({ productInsights: { some: insightFilter } });
+  } else if (product_id) {
+    where.AND.push({ productInsights: { some: { productId: product_id } } });
+  } else if (vendor) {
+    const vendorFilter = {
+      vendorName: { contains: vendor, mode: 'insensitive' },
+    };
+    if (vendor_current_only === 'true') {
+      vendorFilter.isCurrent = true;
+    }
+    where.AND.push({
+      productInsights: {
+        some: { vendorSources: { some: vendorFilter } },
+      },
+    });
+  }
+
   if (not_ordered_from && not_ordered_to) {
     where.AND.push({
       NOT: {
@@ -115,6 +169,7 @@ async function listCustomers(query, user, companyId) {
       shopName: c.shopName,
       panVatNumber: c.panVatNumber,
       businessStatus: c.businessStatus,
+      customerTypes: c.customerTypes,
       assignedTo: c.assignedTo,
       assignee: c.assignee,
       address: c.addresses[0] || null,
