@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import {
   formLabel,
@@ -46,7 +47,7 @@ export default function CustomerProductInsights({
 
   const load = async () => {
     const [productRes, insightRes] = await Promise.all([
-      api.get('/products', { params: { active: true } }),
+      api.get('/products', { params: { active_only: 'true' } }),
       api.get(`/customers/${customerId}/product-insights`),
     ]);
     setProducts(productRes.data);
@@ -165,6 +166,13 @@ export default function CustomerProductInsights({
             </div>
           ))}
         </div>
+      )}
+
+      {canEdit && products.length === 0 && (
+        <p className="text-sm text-slate-600">
+          Add at least one active product before recording a field survey.{' '}
+          <Link to="/products" className="text-blue-600 hover:underline">Go to Products</Link>
+        </p>
       )}
 
       {canEdit && products.length > 0 && (

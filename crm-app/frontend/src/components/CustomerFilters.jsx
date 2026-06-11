@@ -8,7 +8,7 @@ export default function CustomerFilters({ filters, onChange }) {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    api.get('/products', { params: { active: true } }).then((res) => setProducts(res.data));
+    api.get('/products', { params: { active_only: 'true' } }).then((res) => setProducts(res.data));
   }, []);
 
   const toggleCustomerType = (value) => {
