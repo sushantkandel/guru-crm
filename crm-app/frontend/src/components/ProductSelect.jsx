@@ -1,12 +1,7 @@
-import { useEffect, useState } from 'react';
-import api from '../services/api';
+import { useActiveProducts } from '../hooks/useActiveProducts';
 
 export default function ProductSelect({ value, onChange, className = '' }) {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    api.get('/products', { params: { active_only: 'true' } }).then((res) => setProducts(res.data));
-  }, []);
+  const { products } = useActiveProducts();
 
   const handleSelect = (productId) => {
     const product = products.find((p) => p.id === productId);

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import {
   formLabel,
@@ -45,27 +45,35 @@ export default function CustomerProductInsights({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
+  const [reloading, setReloading] = useState(false);
+  const location = useLocation();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const [productRes, insightRes] = await Promise.all([
       api.get('/products', { params: { active_only: 'true' } }),
       api.get(`/customers/${customerId}/product-insights`),
     ]);
     setProducts(productRes.data);
     setInsights(insightRes.data);
-  };
+  }, [customerId]);
 
   useEffect(() => {
     load().catch((err) => setError(err.response?.data?.error || 'Failed to load field intelligence'));
-  }, [customerId]);
+  }, [load, location.pathname]);
 
   useEffect(() => {
     const refresh = () => {
-      load().catch(() => {});
+      if (document.visibilityState === 'visible') {
+        load().catch(() => {});
+      }
     };
     window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
-  }, [customerId]);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
 
   const selectProduct = (productId) => {
     setSelectedProductId(productId);
@@ -212,16 +220,45 @@ export default function CustomerProductInsights({
         <p className="text-sm text-slate-600">
           Add at least one active product before recording a field survey.{' '}
           <Link to="/products" className="text-blue-600 hover:underline">Go to Products</Link>
+          {' · '}
+          <button
+            type="button"
+            className="text-blue-600 hover:underline"
+            disabled={reloading}
+            onClick={() => {
+              setReloading(true);
+              load()
+                .catch((err) => setError(err.response?.data?.error || 'Failed to refresh products'))
+                .finally(() => setReloading(false));
+            }}
+          >
+            {reloading ? 'Refreshing…' : 'Refresh products'}
+          </button>
         </p>
       )}
 
       {canEdit && products.length > 0 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
-            {insights.length > 0
-              ? 'Select a product below or tap Edit on a saved survey to update it.'
-              : 'Record product awareness, selling status, and vendor details for this visit.'}
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-slate-600">
+              {insights.length > 0
+                ? 'Select a product below or tap Edit on a saved survey to update it.'
+                : 'Record product awareness, selling status, and vendor details for this visit.'}
+            </p>
+            <button
+              type="button"
+              className="text-sm text-blue-600 hover:underline shrink-0"
+              disabled={reloading}
+              onClick={() => {
+                setReloading(true);
+                load()
+                  .catch((err) => setError(err.response?.data?.error || 'Failed to refresh'))
+                  .finally(() => setReloading(false));
+              }}
+            >
+              {reloading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
           <div>
             <label className={formLabel}>Product</label>
             <select

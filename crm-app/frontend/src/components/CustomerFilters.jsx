@@ -1,15 +1,10 @@
-import { useEffect, useState } from 'react';
-import api from '../services/api';
 import NepalLocationSelect from './NepalLocationSelect';
 import { CUSTOMER_TYPES } from '../constants/customerTypes';
+import { useActiveProducts } from '../hooks/useActiveProducts';
 import { formLabel, formInput, pageCardPadded } from '../utils/formStyles';
 
 export default function CustomerFilters({ filters, onChange }) {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    api.get('/products', { params: { active_only: 'true' } }).then((res) => setProducts(res.data));
-  }, []);
+  const { products } = useActiveProducts();
 
   const toggleCustomerType = (value) => {
     const selected = filters.customer_type.includes(value);

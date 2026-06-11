@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -35,16 +36,33 @@ export default function Products() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [requestDeleteTarget, setRequestDeleteTarget] = useState(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const location = useLocation();
 
   const load = () => api.get('/products').then((res) => setProducts(res.data));
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') load();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       await api.post('/products', {
@@ -53,6 +71,7 @@ export default function Products() {
         productCode: form.productCode || null,
       });
       setForm(emptyForm);
+      setSuccess('Product added to your catalog.');
       load();
     } catch (err) {
       const details = err.response?.data?.details;
@@ -80,6 +99,7 @@ export default function Products() {
   const handleEdit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       await api.put(`/products/${editProduct.id}`, {
@@ -88,6 +108,7 @@ export default function Products() {
         productCode: editForm.productCode || null,
       });
       setEditProduct(null);
+      setSuccess('Product updated.');
       load();
     } catch (err) {
       const details = err.response?.data?.details;
@@ -119,6 +140,12 @@ export default function Products() {
   return (
     <div className={pageShell}>
       <PageHeader title="Products" subtitle="Manage your product catalog and default prices" />
+
+      {success && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+          {success}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div className={formCard}>
