@@ -158,8 +158,9 @@ export default function Customers() {
                   <th>Conversion</th>
                   <th>Phone</th>
                   <th>Location</th>
-                  <th>Pending</th>
-                  <th className="text-right">Remaining</th>
+                  <th title="Orders not yet confirmed or delivered">Pending orders</th>
+                  <th className="text-right" title="Amount still owed after completed payments">Balance due</th>
+                  <th className="text-right" title="Credit or cheque recorded but not yet marked completed">Credit/cheque pending</th>
                   <th>Last Order</th>
                   {isOwner && <th>Last edited</th>}
                   {showActions && <th>Actions</th>}
@@ -196,6 +197,11 @@ export default function Customers() {
                       ) : (
                         <span className="text-green-600">Paid</span>
                       )}
+                    </td>
+                    <td className="text-right text-amber-700">
+                      {(c.balance.pendingSettlement || 0) > 0
+                        ? `Rs ${c.balance.pendingSettlement.toLocaleString()}`
+                        : '—'}
                     </td>
                     <td className="text-slate-500">
                       {c.lastOrderDate ? new Date(c.lastOrderDate).toLocaleDateString() : 'Never'}

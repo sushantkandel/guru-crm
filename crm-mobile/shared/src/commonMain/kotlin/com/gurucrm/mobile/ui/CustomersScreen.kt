@@ -180,8 +180,23 @@ fun CustomersScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
+                            if (customer.pendingOrderCount > 0) {
+                                Text(
+                                    "${customer.pendingOrderCount} order${if (customer.pendingOrderCount == 1) "" else "s"} pending",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.padding(top = GuruSpacing.xs),
+                                )
+                            }
                             if (customer.balance.remaining > 0) {
                                 BalanceChip(customer.balance.remaining, modifier = Modifier.padding(top = GuruSpacing.xs))
+                            }
+                            if (customer.balance.pendingSettlement > 0) {
+                                Text(
+                                    "Credit/cheque pending: Rs ${customer.balance.pendingSettlement.toLong()}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                )
                             }
                         }
                     }

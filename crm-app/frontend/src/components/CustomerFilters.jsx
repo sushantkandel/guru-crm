@@ -149,7 +149,7 @@ export default function CustomerFilters({ filters, onChange }) {
             onChange={(e) => onChange({ ...filters, has_remaining_payment: e.target.checked })}
             className="rounded"
           />
-          Has remaining payment
+          Has balance due
         </label>
         <label className="flex items-center gap-2 text-sm sm:text-base text-slate-700 cursor-pointer">
           <input
