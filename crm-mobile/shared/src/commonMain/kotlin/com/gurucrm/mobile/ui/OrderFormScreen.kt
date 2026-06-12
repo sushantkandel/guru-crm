@@ -27,6 +27,7 @@ import com.gurucrm.mobile.data.OrderItemInput
 import com.gurucrm.mobile.data.OrderUpdateRequest
 import com.gurucrm.mobile.data.ProductDto
 import com.gurucrm.mobile.data.UserDto
+import com.gurucrm.mobile.ui.components.ErrorBanner
 import com.gurucrm.mobile.ui.components.GuruFieldRow
 import com.gurucrm.mobile.ui.components.GuruFormActions
 import com.gurucrm.mobile.ui.components.GuruFormColumn
@@ -41,12 +42,14 @@ import com.gurucrm.mobile.ui.theme.GuruSpacing
 import com.gurucrm.mobile.util.canEdit
 import kotlinx.coroutines.launch
 
+private val unitOptions = listOf("packet" to "Packet", "bundle" to "Bundle", "bag" to "Bag")
+
 private data class LineItemState(
-    var productId: String? = null,
-    var productName: String = "",
-    var quantity: String = "1",
-    var unit: String = "packet",
-    var unitPrice: String = "0",
+    val productId: String? = null,
+    val productName: String = "",
+    val quantity: String = "1",
+    val unit: String = "packet",
+    val unitPrice: String = "0",
 )
 
 @Composable
@@ -67,6 +70,7 @@ fun OrderFormScreen(
 
     val isEdit = orderId != null
     var loading by remember { mutableStateOf(isEdit) }
+    var loadError by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var customers by remember { mutableStateOf<List<CustomerDto>>(emptyList()) }
@@ -76,12 +80,16 @@ fun OrderFormScreen(
     var notes by remember { mutableStateOf("") }
     val items = remember { mutableStateListOf(LineItemState()) }
     var customerExpanded by remember { mutableStateOf(false) }
+    var unitMenuIndex by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        runCatching {
+        loadError = null
+        try {
             customers = api.customers()
             products = api.products(activeOnly = true)
+        } catch (e: Exception) {
+            loadError = e.message ?: "Failed to load customers or products"
         }
         if (orderDate.isBlank()) {
             orderDate = kotlinx.datetime.Clock.System.now().toString().take(10)
@@ -120,6 +128,7 @@ fun OrderFormScreen(
         (it.quantity.toDoubleOrNull() ?: 0.0) * (it.unitPrice.toDoubleOrNull() ?: 0.0)
     }
     val selectedCustomer = customers.find { it.id == customerId }
+    val hasValidLine = items.any { it.productName.isNotBlank() }
 
     GuruScaffold(
         title = if (isEdit) "Edit order" else "New order",
@@ -128,6 +137,17 @@ fun OrderFormScreen(
     ) { padding ->
         when {
             loading -> LoadingScreen()
+            loadError != null -> ErrorBanner(loadError!!, onRetry = {
+                loadError = null
+                scope.launch {
+                    try {
+                        customers = api.customers()
+                        products = api.products(activeOnly = true)
+                    } catch (e: Exception) {
+                        loadError = e.message ?: "Failed to load customers or products"
+                    }
+                }
+            })
             else -> Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
                 GuruFormColumn(scroll = false) {
                     if (!isEdit) {
@@ -161,29 +181,47 @@ fun OrderFormScreen(
                                 products = products,
                                 selectedName = item.productName,
                                 onSelect = { sel ->
-                                    item.productId = sel.productId
-                                    item.productName = sel.productName
-                                    item.unit = sel.unit
-                                    item.unitPrice = sel.unitPrice.toString()
+                                    items[index] = item.copy(
+                                        productId = sel.productId,
+                                        productName = sel.productName,
+                                        unit = sel.unit,
+                                        unitPrice = sel.unitPrice.toString(),
+                                    )
                                 },
                             )
                             GuruFieldRow {
                                 GuruTextField(
                                     value = item.quantity,
-                                    onValueChange = { item.quantity = it },
+                                    onValueChange = { items[index] = item.copy(quantity = it) },
                                     label = "Qty",
                                     modifier = Modifier.weight(1f),
                                 )
-                                GuruTextField(
-                                    value = item.unit,
-                                    onValueChange = { item.unit = it },
-                                    label = "Unit",
-                                    modifier = Modifier.weight(1f),
-                                )
+                                Column(Modifier.weight(1f)) {
+                                    GuruPickerField(
+                                        value = unitOptions.firstOrNull { it.first == item.unit }?.second ?: item.unit,
+                                        label = "Unit",
+                                        placeholder = "Select unit",
+                                        onOpenPicker = { unitMenuIndex = index },
+                                    )
+                                    DropdownMenu(
+                                        expanded = unitMenuIndex == index,
+                                        onDismissRequest = { unitMenuIndex = null },
+                                    ) {
+                                        unitOptions.forEach { (value, label) ->
+                                            DropdownMenuItem(
+                                                text = { Text(label) },
+                                                onClick = {
+                                                    items[index] = item.copy(unit = value)
+                                                    unitMenuIndex = null
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
                             }
                             GuruTextField(
                                 value = item.unitPrice,
-                                onValueChange = { item.unitPrice = it },
+                                onValueChange = { items[index] = item.copy(unitPrice = it) },
                                 label = "Unit price (Rs)",
                             )
                             if (items.size > 1) {
@@ -202,7 +240,7 @@ fun OrderFormScreen(
                         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                         GuruPrimaryButton(
                             text = if (saving) "Saving…" else "Save order",
-                            enabled = !saving && customerId.isNotBlank() && items.any { it.productName.isNotBlank() },
+                            enabled = !saving && customerId.isNotBlank() && hasValidLine,
                             onClick = {
                                 saving = true
                                 error = null

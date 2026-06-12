@@ -90,6 +90,14 @@ data class BalanceDto(
     val totalOrders: Double = 0.0,
     val totalPaid: Double = 0.0,
     val remaining: Double = 0.0,
+    val pendingSettlement: Double = 0.0,
+)
+
+@Serializable
+data class OrderBalanceDto(
+    val orderTotal: Double,
+    val paidOnOrder: Double,
+    val remainingOnOrder: Double,
 )
 
 @Serializable
@@ -396,4 +404,5 @@ data class PaymentQuery(
     val municipality: String? = null,
     val ward: String? = null,
     @SerialName("product_id") val productId: String? = null,
+    val status: String? = null,
 )

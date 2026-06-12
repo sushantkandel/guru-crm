@@ -46,9 +46,10 @@ function formatCustomerLocation(addresses) {
 
 export default function Payments() {
   const [outstanding, setOutstanding] = useState([]);
+  const [pendingPayments, setPendingPayments] = useState([]);
   const [payments, setPayments] = useState([]);
   const [filters, setFilters] = useState(defaultPaymentFilters);
-  const [tab, setTab] = useState('outstanding');
+  const [tab, setTab] = useState('due');
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [requestDeleteTarget, setRequestDeleteTarget] = useState(null);
@@ -60,10 +61,12 @@ export default function Payments() {
     const params = buildFilterParams(filters);
     Promise.all([
       api.get('/payments/outstanding', { params }),
-      api.get('/payments', { params }),
+      api.get('/payments', { params: { ...params, status: 'pending' } }),
+      api.get('/payments', { params: { ...params, status: 'completed' } }),
     ])
-      .then(([outRes, payRes]) => {
+      .then(([outRes, pendingRes, payRes]) => {
         setOutstanding(outRes.data);
+        setPendingPayments(pendingRes.data);
         setPayments(payRes.data);
       })
       .finally(() => setLoading(false));
@@ -103,7 +106,7 @@ export default function Payments() {
     <div className={pageShell}>
       <PageHeader
         title="Payments"
-        subtitle="Outstanding balances and payment history"
+        subtitle="Balance due, pending settlement, and payment history"
         actions={
           canEdit ? (
             <Link to="/payments/new" className={btnToolbarSuccess}>
@@ -117,24 +120,31 @@ export default function Payments() {
         <div className={tabGroup}>
           <button
             type="button"
-            onClick={() => setTab('outstanding')}
-            className={tab === 'outstanding' ? tabBtnActive : tabBtn}
+            onClick={() => setTab('due')}
+            className={tab === 'due' ? tabBtnActive : tabBtn}
           >
-            Outstanding ({outstanding.length})
+            Balance Due ({outstanding.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('pending')}
+            className={tab === 'pending' ? tabBtnActive : tabBtn}
+          >
+            Pending Settlement ({pendingPayments.length})
           </button>
           <button
             type="button"
             onClick={() => setTab('history')}
             className={tab === 'history' ? tabBtnActive : tabBtn}
           >
-            Payment History
+            Payment History ({payments.length})
           </button>
         </div>
       </div>
 
       <PaymentFilters filters={filters} onChange={setFilters} />
 
-      {tab === 'outstanding' ? (
+      {tab === 'due' ? (
         <div className={`${pageCard} mt-4 overflow-hidden`}>
           {loading ? (
             <div className={loadingState}>Loading…</div>
@@ -148,9 +158,10 @@ export default function Payments() {
                     <th>Customer</th>
                     <th>Shop</th>
                     <th>Phone</th>
-                    <th className="text-right">Total Orders</th>
+                    <th className="text-right">Ordered</th>
                     <th className="text-right">Paid</th>
-                    <th className="text-right">Remaining</th>
+                    <th className="text-right">Due</th>
+                    <th className="text-right">Pending Credit/Cheque</th>
                     {canEdit && <th></th>}
                   </tr>
                 </thead>
@@ -163,8 +174,13 @@ export default function Payments() {
                       <td>{c.shopName}</td>
                       <td className="text-slate-600">{c.phone}</td>
                       <td className="text-right">Rs {c.balance.totalOrders.toLocaleString()}</td>
-                      <td className="text-right">Rs {c.balance.totalPaid.toLocaleString()}</td>
+                      <td className="text-right text-green-700">Rs {c.balance.totalPaid.toLocaleString()}</td>
                       <td className="text-right font-bold text-red-600">Rs {c.balance.remaining.toLocaleString()}</td>
+                      <td className="text-right text-amber-700">
+                        {c.balance.pendingSettlement > 0
+                          ? `Rs ${c.balance.pendingSettlement.toLocaleString()}`
+                          : '—'}
+                      </td>
                       {canEdit && (
                         <td>
                           <Link to={`/payments/new?customer=${c.id}`} className={btnLinkSuccess}>
@@ -179,12 +195,68 @@ export default function Payments() {
             </div>
           )}
         </div>
+      ) : tab === 'pending' ? (
+        <div className={`${pageCard} mt-4 overflow-hidden`}>
+          {loading ? (
+            <div className={loadingState}>Loading…</div>
+          ) : pendingPayments.length === 0 ? (
+            <div className={emptyState}>No pending credit or cheque payments</div>
+          ) : (
+            <div className={dataTableWrap}>
+              <table className={dataTable}>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Shop</th>
+                    <th>Customer</th>
+                    <th>Type</th>
+                    <th>Due / Cheque</th>
+                    <th className="text-right">Amount</th>
+                    {canEdit && <th>Actions</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingPayments.map((p) => (
+                    <tr key={p.id}>
+                      <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                      <td>
+                        <Link to={`/customers/${p.customer.id}`} className="text-blue-600 hover:underline">
+                          {p.customer.shopName}
+                        </Link>
+                      </td>
+                      <td className="text-slate-600">{p.customer.name}</td>
+                      <td className="capitalize">{p.paymentType}</td>
+                      <td className="text-slate-600">
+                        {p.paymentType === 'credit' && p.creditDueDate
+                          ? `Due ${new Date(p.creditDueDate).toLocaleDateString()}`
+                          : p.chequeNumber
+                            ? `${p.chequeNumber}${p.bankName ? ` (${p.bankName})` : ''}`
+                            : '—'}
+                      </td>
+                      <td className="text-right font-medium text-amber-700">
+                        Rs {Number(p.amount).toLocaleString()}
+                      </td>
+                      {canEdit && (
+                        <td className="whitespace-nowrap space-x-2">
+                          <Link to={`/payments/${p.id}/edit`} className={btnLink}>Edit</Link>
+                          <button type="button" onClick={() => markCompleted(p.id)} className={btnLinkSuccess}>
+                            Mark completed
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       ) : (
         <div className={`${pageCard} mt-4 overflow-hidden`}>
           {loading ? (
             <div className={loadingState}>Loading…</div>
           ) : payments.length === 0 ? (
-            <div className={emptyState}>No payments recorded yet</div>
+            <div className={emptyState}>No completed payments yet</div>
           ) : (
             <div className={dataTableWrap}>
               <table className={dataTable}>
@@ -196,7 +268,6 @@ export default function Payments() {
                     <th>Location</th>
                     <th>Phone</th>
                     <th>Type</th>
-                    <th>Status</th>
                     <th className="text-right">Amount</th>
                     {isOwner && <th>Last edited</th>}
                     {canEdit && <th>Actions</th>}
@@ -215,19 +286,15 @@ export default function Payments() {
                       <td className="text-slate-600">{formatCustomerLocation(p.customer.addresses)}</td>
                       <td className="text-slate-600">{p.customer.phone || '—'}</td>
                       <td className="capitalize">{p.paymentType}</td>
-                      <td className="capitalize">{p.status}</td>
-                      <td className="text-right font-medium">Rs {Number(p.amount).toLocaleString()}</td>
+                      <td className="text-right font-medium text-green-700">
+                        Rs {Number(p.amount).toLocaleString()}
+                      </td>
                       {isOwner && (
                         <td><LastEditedBy record={p} /></td>
                       )}
                       {canEdit && (
                         <td className="whitespace-nowrap space-x-2">
                           <Link to={`/payments/${p.id}/edit`} className={btnLink}>Edit</Link>
-                          {p.status === 'pending' && (
-                            <button type="button" onClick={() => markCompleted(p.id)} className={btnLinkSuccess}>
-                              Complete
-                            </button>
-                          )}
                           {canDelete && !outstandingCustomerIds.has(p.customer.id) && (
                             <button type="button" onClick={() => setDeleteTarget(p)} className={btnLinkDanger}>
                               Delete

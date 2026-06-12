@@ -49,6 +49,7 @@ private val statusFilters = listOf(
 fun OrdersScreen(
     api: GuruApi,
     user: UserDto,
+    listRefreshKey: Long = 0L,
     onOrderClick: (String) -> Unit,
     onNewOrder: (String?) -> Unit,
 ) {
@@ -59,7 +60,7 @@ fun OrdersScreen(
     var refreshKey by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(statusFilter, refreshKey) {
+    LaunchedEffect(statusFilter, refreshKey, listRefreshKey) {
         loading = true
         error = null
         try {

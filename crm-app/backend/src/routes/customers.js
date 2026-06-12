@@ -105,6 +105,23 @@ router.put('/:id/product-insights/:productId', roleGuard('owner', 'staff'), asyn
   }
 });
 
+router.get('/:id/balance', async (req, res, next) => {
+  try {
+    const customer = await prisma.customer.findFirst({
+      where: { id: req.params.id, companyId: req.companyId },
+      select: { id: true, assignedTo: true },
+    });
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    if (!canAccessCustomer(req.user, customer)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    const balance = await getCustomerBalance(customer.id);
+    res.json(balance);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id', async (req, res, next) => {
   try {
     const customer = await prisma.customer.findFirst({

@@ -3,7 +3,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authMiddleware, roleGuard } = require('../middleware/auth');
 const { tenantMiddleware, ownerOnlyDelete } = require('../middleware/tenant');
-const { getCustomerBalance } = require('../services/balanceService');
+const { getCustomerBalance, getOrderBalance } = require('../services/balanceService');
 const { auditInclude, auditOnCreate, auditOnUpdate } = require('../utils/audit');
 
 const router = express.Router();
@@ -69,6 +69,24 @@ router.get('/', async (req, res, next) => {
     });
 
     res.json(orders);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/balance', async (req, res, next) => {
+  try {
+    const order = await prisma.order.findFirst({
+      where: { id: req.params.id, companyId: req.companyId },
+      include: { customer: { select: { assignedTo: true } } },
+    });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (req.user.role === 'staff' && order.customer.assignedTo !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    const balance = await getOrderBalance(order.id);
+    if (!balance) return res.status(400).json({ error: 'Order is cancelled' });
+    res.json(balance);
   } catch (err) {
     next(err);
   }

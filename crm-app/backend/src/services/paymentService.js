@@ -78,11 +78,12 @@ function buildCustomerFilter(query, user) {
 }
 
 function buildPaymentWhere(query, user, companyId) {
-  const { payment_type, customer_id } = query;
+  const { payment_type, customer_id, status } = query;
   const where = { companyId, AND: [] };
 
   if (customer_id) where.AND.push({ customerId: customer_id });
   if (payment_type) where.AND.push({ paymentType: payment_type });
+  if (status) where.AND.push({ status });
 
   const customerFilter = buildCustomerFilter(query, user);
   if (customerFilter.AND) {

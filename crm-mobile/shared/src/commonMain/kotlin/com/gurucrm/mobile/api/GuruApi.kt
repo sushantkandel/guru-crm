@@ -2,6 +2,7 @@ package com.gurucrm.mobile.api
 
 import com.gurucrm.mobile.apiBaseUrl
 import com.gurucrm.mobile.data.AuthResponse
+import com.gurucrm.mobile.data.BalanceDto
 import com.gurucrm.mobile.data.BackupPreviewDto
 import com.gurucrm.mobile.data.BackupRestoreResultDto
 import com.gurucrm.mobile.data.CustomerDetailDto
@@ -25,6 +26,7 @@ import com.gurucrm.mobile.data.MessageResponse
 import com.gurucrm.mobile.data.RegisterCompanyRequest
 import com.gurucrm.mobile.data.LatLng
 import com.gurucrm.mobile.data.MapLocationQuery
+import com.gurucrm.mobile.data.OrderBalanceDto
 import com.gurucrm.mobile.data.OrderCreateRequest
 import com.gurucrm.mobile.data.OrderDto
 import com.gurucrm.mobile.data.OrderStatusRequest
@@ -363,6 +365,10 @@ class GuruApi(private val tokenStore: TokenStore) {
 
     suspend fun order(id: String): OrderDto = authorizedGet("/orders/$id")
 
+    suspend fun orderBalance(id: String): OrderBalanceDto = authorizedGet("/orders/$id/balance")
+
+    suspend fun customerBalance(id: String): BalanceDto = authorizedGet("/customers/$id/balance")
+
     suspend fun createOrder(body: OrderCreateRequest): OrderDto = authorizedPost("/orders", body)
 
     suspend fun updateOrder(id: String, body: OrderUpdateRequest): OrderDto = authorizedPut("/orders/$id", body)
@@ -409,6 +415,7 @@ class GuruApi(private val tokenStore: TokenStore) {
             query.municipality?.takeIf { it.isNotBlank() }?.let { put("municipality", it) }
             query.ward?.takeIf { it.isNotBlank() }?.let { put("ward", it) }
             query.productId?.takeIf { it.isNotBlank() }?.let { put("product_id", it) }
+            query.status?.takeIf { it.isNotBlank() }?.let { put("status", it) }
         }
         return authorizedGet("/payments", params)
     }

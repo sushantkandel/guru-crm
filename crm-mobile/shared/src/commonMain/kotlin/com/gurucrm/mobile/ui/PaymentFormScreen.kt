@@ -19,13 +19,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.gurucrm.mobile.api.GuruApi
+import com.gurucrm.mobile.data.BalanceDto
 import com.gurucrm.mobile.data.CustomerDto
+import com.gurucrm.mobile.data.OrderBalanceDto
 import com.gurucrm.mobile.data.OrderDto
 import com.gurucrm.mobile.data.PaymentUpsertRequest
 import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.ui.components.FilterChipRow
 import com.gurucrm.mobile.ui.components.GuruFormActions
 import com.gurucrm.mobile.ui.components.GuruFormColumn
+import com.gurucrm.mobile.ui.components.GuruOutlinedButton
 import com.gurucrm.mobile.ui.components.GuruPickerField
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
 import com.gurucrm.mobile.ui.components.GuruScaffold
@@ -62,6 +65,8 @@ fun PaymentFormScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var customers by remember { mutableStateOf<List<CustomerDto>>(emptyList()) }
     var orders by remember { mutableStateOf<List<OrderDto>>(emptyList()) }
+    var customerBalance by remember { mutableStateOf(BalanceDto()) }
+    var orderBalance by remember { mutableStateOf<OrderBalanceDto?>(null) }
     var customerId by remember { mutableStateOf(initialCustomerId.orEmpty()) }
     var orderId by remember { mutableStateOf("") }
     var paymentType by remember { mutableStateOf("cash") }
@@ -85,9 +90,19 @@ fun PaymentFormScreen(
     LaunchedEffect(customerId) {
         if (customerId.isBlank()) {
             orders = emptyList()
+            customerBalance = BalanceDto()
             return@LaunchedEffect
         }
         orders = api.orders(customerId = customerId).filter { it.status != "cancelled" }
+        customerBalance = api.customerBalance(customerId)
+    }
+
+    LaunchedEffect(orderId) {
+        orderBalance = if (orderId.isBlank()) {
+            null
+        } else {
+            runCatching { api.orderBalance(orderId) }.getOrNull()
+        }
     }
 
     LaunchedEffect(paymentId) {
@@ -115,6 +130,13 @@ fun PaymentFormScreen(
 
     val selectedCustomer = customers.find { it.id == customerId }
     val selectedOrder = orders.find { it.id == orderId }
+    val effectiveStatus = if (isEdit) status else if (paymentType == "credit" || paymentType == "cheque") "pending" else "completed"
+    val amountNum = amount.toDoubleOrNull() ?: 0.0
+    val remainingAfter = if (effectiveStatus == "completed") {
+        (customerBalance.remaining - amountNum).coerceAtLeast(0.0)
+    } else {
+        customerBalance.remaining
+    }
 
     GuruScaffold(
         title = if (isEdit) "Edit payment" else "Record payment",
@@ -136,7 +158,7 @@ fun PaymentFormScreen(
                             DropdownMenu(expanded = customerExpanded, onDismissRequest = { customerExpanded = false }) {
                                 customers.forEach { c ->
                                     DropdownMenuItem(
-                                        text = { Text("${c.shopName} — remaining Rs ${c.balance.remaining.toLong()}") },
+                                        text = { Text("${c.shopName} — due Rs ${c.balance.remaining.toLong()}") },
                                         onClick = { customerId = c.id; orderId = ""; customerExpanded = false },
                                     )
                                 }
@@ -146,12 +168,25 @@ fun PaymentFormScreen(
                         Text("Customer: ${selectedCustomer?.shopName ?: "—"}")
                     }
 
-                    selectedCustomer?.let {
-                        Text(
-                            "Remaining balance: Rs ${it.balance.remaining.toLong()}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    if (customerId.isNotBlank()) {
+                        Column(Modifier.padding(vertical = GuruSpacing.xs)) {
+                            Text(
+                                "Ordered Rs ${customerBalance.totalOrders.toLong()} · Paid Rs ${customerBalance.totalPaid.toLong()}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "Balance due: Rs ${customerBalance.remaining.toLong()}",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            if (customerBalance.pendingSettlement > 0) {
+                                Text(
+                                    "Pending credit/cheque: Rs ${customerBalance.pendingSettlement.toLong()}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                )
+                            }
+                        }
                     }
 
                     if (customerId.isNotBlank()) {
@@ -172,6 +207,13 @@ fun PaymentFormScreen(
                                 }
                             }
                         }
+                        orderBalance?.let { ob ->
+                            Text(
+                                "Order remaining: Rs ${ob.remainingOnOrder.toLong()} (paid Rs ${ob.paidOnOrder.toLong()} of Rs ${ob.orderTotal.toLong()})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
 
                     GuruSectionTitle("Payment details")
@@ -184,12 +226,35 @@ fun PaymentFormScreen(
                     )
 
                     GuruTextField(value = amount, onValueChange = { amount = it }, label = "Amount (Rs)")
+                    if (customerBalance.remaining > 0) {
+                        GuruOutlinedButton(
+                            text = "Pay full remaining",
+                            onClick = {
+                                val target = orderBalance?.remainingOnOrder ?: customerBalance.remaining
+                                if (target > 0) amount = target.toLong().toString()
+                            },
+                        )
+                        if (amountNum > 0 && effectiveStatus == "completed") {
+                            Text(
+                                "Rs ${remainingAfter.toLong()} will remain due after this payment",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     GuruTextField(value = paymentDate, onValueChange = { paymentDate = it }, label = "Payment date")
 
                     when (paymentType) {
                         "cheque" -> {
                             GuruTextField(value = chequeNumber, onValueChange = { chequeNumber = it }, label = "Cheque number")
                             GuruTextField(value = bankName, onValueChange = { bankName = it }, label = "Bank name")
+                            if (!isEdit) {
+                                Text(
+                                    "Cheque payments are saved as pending until marked completed.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                         "qr" -> {
                             GuruTextField(value = qrReference, onValueChange = { qrReference = it }, label = "QR reference")
@@ -203,6 +268,13 @@ fun PaymentFormScreen(
                         }
                         "credit" -> {
                             GuruTextField(value = creditDueDate, onValueChange = { creditDueDate = it }, label = "Credit due date")
+                            if (!isEdit) {
+                                Text(
+                                    "Credit is saved as pending. Balance due is unchanged until completed.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
 
@@ -226,14 +298,13 @@ fun PaymentFormScreen(
                                 error = null
                                 scope.launch {
                                     try {
-                                        val finalStatus = if (!isEdit && paymentType == "credit") "pending" else status
                                         val payload = PaymentUpsertRequest(
                                             customerId = customerId,
                                             orderId = orderId.ifBlank { null },
                                             paymentType = paymentType,
                                             amount = amount.toDouble(),
                                             paymentDate = paymentDate,
-                                            status = finalStatus,
+                                            status = effectiveStatus,
                                             chequeNumber = chequeNumber.ifBlank { null },
                                             bankName = bankName.ifBlank { null },
                                             qrReference = qrReference.ifBlank { null },

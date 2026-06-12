@@ -25,6 +25,41 @@ const paymentSchema = z.object({
 
 router.use(authMiddleware, tenantMiddleware);
 
+function defaultStatusForCreate(paymentType, status) {
+  if (paymentType === 'credit' || paymentType === 'cheque') {
+    return 'pending';
+  }
+  return status;
+}
+
+async function getAvailableRemaining(customerId, excludePaymentId = null) {
+  const balance = await getCustomerBalance(customerId);
+  let remaining = balance.remaining;
+
+  if (excludePaymentId) {
+    const existing = await prisma.payment.findUnique({
+      where: { id: excludePaymentId },
+      select: { status: true, amount: true },
+    });
+    if (existing?.status === 'completed') {
+      remaining += Number(existing.amount);
+    }
+  }
+
+  return remaining;
+}
+
+async function assertCompletedAmountAllowed(customerId, amount, excludePaymentId = null) {
+  const remaining = await getAvailableRemaining(customerId, excludePaymentId);
+  if (amount > remaining + 0.001) {
+    const err = new Error(
+      `Payment amount exceeds remaining balance of Rs ${remaining.toLocaleString('en-NP', { maximumFractionDigits: 2 })}`,
+    );
+    err.status = 400;
+    throw err;
+  }
+}
+
 router.get('/', async (req, res, next) => {
   try {
     const payments = await listPayments(req.query, req.user, req.companyId);
@@ -66,6 +101,7 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', roleGuard('owner', 'staff'), async (req, res, next) => {
   try {
     const data = paymentSchema.parse(req.body);
+    const status = defaultStatusForCreate(data.paymentType, data.status);
 
     const customer = await prisma.customer.findFirst({
       where: { id: data.customerId, companyId: req.companyId },
@@ -84,6 +120,10 @@ router.post('/', roleGuard('owner', 'staff'), async (req, res, next) => {
       }
     }
 
+    if (status === 'completed') {
+      await assertCompletedAmountAllowed(data.customerId, data.amount);
+    }
+
     const payment = await prisma.payment.create({
       data: {
         companyId: req.companyId,
@@ -92,7 +132,7 @@ router.post('/', roleGuard('owner', 'staff'), async (req, res, next) => {
         paymentType: data.paymentType,
         amount: data.amount,
         paymentDate: new Date(data.paymentDate),
-        status: data.status,
+        status,
         chequeNumber: data.chequeNumber,
         bankName: data.bankName,
         qrReference: data.qrReference,
@@ -110,6 +150,7 @@ router.post('/', roleGuard('owner', 'staff'), async (req, res, next) => {
     const balance = await getCustomerBalance(data.customerId);
     res.status(201).json({ payment, balance });
   } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
     next(err);
   }
 });
@@ -133,6 +174,10 @@ router.put('/:id', roleGuard('owner', 'staff'), async (req, res, next) => {
       if (!order || order.customerId !== data.customerId) {
         return res.status(400).json({ error: 'Invalid order for this customer' });
       }
+    }
+
+    if (data.status === 'completed') {
+      await assertCompletedAmountAllowed(data.customerId, data.amount, payment.id);
     }
 
     const updated = await prisma.payment.update({
@@ -161,6 +206,7 @@ router.put('/:id', roleGuard('owner', 'staff'), async (req, res, next) => {
     const balance = await getCustomerBalance(data.customerId);
     res.json({ payment: updated, balance });
   } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
     next(err);
   }
 });
@@ -200,6 +246,10 @@ router.patch('/:id/status', roleGuard('owner', 'staff'), async (req, res, next) 
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    if (status === 'completed' && payment.status !== 'completed') {
+      await assertCompletedAmountAllowed(payment.customerId, Number(payment.amount), payment.id);
+    }
+
     const updated = await prisma.payment.update({
       where: { id: req.params.id },
       data: { status, ...auditOnUpdate(req.user.id) },
@@ -213,6 +263,7 @@ router.patch('/:id/status', roleGuard('owner', 'staff'), async (req, res, next) 
     const balance = await getCustomerBalance(payment.customerId);
     res.json({ payment: updated, balance });
   } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
     next(err);
   }
 });

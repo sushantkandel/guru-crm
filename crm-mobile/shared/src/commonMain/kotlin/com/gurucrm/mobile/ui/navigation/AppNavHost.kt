@@ -20,17 +20,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import kotlinx.datetime.Clock
 import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.UserDto
 import com.gurucrm.mobile.platform.BackupFileService
@@ -173,20 +174,21 @@ fun AppNavHost(
                     onAddCustomer = { navController.navigate("customers/new") },
                 )
             }
-            composable(TabRoute.Orders.route) {
+            composable(TabRoute.Orders.route) { entry ->
+                val listRefreshKey by entry.savedStateHandle.getStateFlow("orders_refresh", 0L).collectAsState()
                 OrdersScreen(
                     api = api,
                     user = user,
+                    listRefreshKey = listRefreshKey,
                     onOrderClick = { navController.navigate("orders/$it") },
                     onNewOrder = { customerId ->
-                        val route = if (customerId != null) "orders/new?customerId=$customerId" else "orders/new"
-                        navController.navigate(route)
+                        navController.navigate("orders/new?customerId=${customerId.orEmpty()}")
                     },
                 )
             }
             if (user.canManageProducts()) {
                 composable(TabRoute.Products.route) { entry ->
-                    val listRefreshKey = entry.savedStateHandle.get<Long>("products_refresh") ?: 0L
+                    val listRefreshKey by entry.savedStateHandle.getStateFlow("products_refresh", 0L).collectAsState()
                     ProductsScreen(
                         api = api,
                         user = user,
@@ -196,10 +198,12 @@ fun AppNavHost(
                     )
                 }
             }
-            composable(TabRoute.Payments.route) {
+            composable(TabRoute.Payments.route) { entry ->
+                val listRefreshKey by entry.savedStateHandle.getStateFlow("payments_refresh", 0L).collectAsState()
                 PaymentsScreen(
                     api = api,
                     user = user,
+                    listRefreshKey = listRefreshKey,
                     onRecordPayment = { customerId ->
                         navController.navigate("payments/new?customerId=$customerId")
                     },
@@ -216,11 +220,13 @@ fun AppNavHost(
 
             composable("customers/{id}") { entry ->
                 val id = entry.savedStateHandle.get<String>("id") ?: return@composable
+                val customerRefreshKey by entry.savedStateHandle.getStateFlow("customer_refresh", 0L).collectAsState()
                 CustomerDetailScreen(
                     api = api,
                     platform = platform,
                     user = user,
                     customerId = id,
+                    listRefreshKey = customerRefreshKey,
                     onBack = { navController.popBackStack() },
                     onEdit = { navController.navigate("customers/edit/$id") },
                     onNewOrder = { navController.navigate("orders/new?customerId=$id") },
@@ -288,11 +294,20 @@ fun AppNavHost(
                     orderId = null,
                     initialCustomerId = customerId,
                     onBack = { navController.popBackStack() },
-                    onSaved = { navController.popBackStack() },
+                    onSaved = {
+                        navController.getBackStackEntry(TabRoute.Orders.route)
+                            .savedStateHandle.set("orders_refresh", Clock.System.now().toEpochMilliseconds())
+                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                            "customer_refresh",
+                            Clock.System.now().toEpochMilliseconds(),
+                        )
+                        navController.popBackStack()
+                    },
                 )
             }
             composable("orders/{id}") { entry ->
                 val id = entry.savedStateHandle.get<String>("id") ?: return@composable
+                if (id == "new" || id == "edit") return@composable
                 OrderDetailScreen(
                     api = api,
                     user = user,
@@ -310,7 +325,15 @@ fun AppNavHost(
                     orderId = id,
                     initialCustomerId = null,
                     onBack = { navController.popBackStack() },
-                    onSaved = { navController.popBackStack() },
+                    onSaved = {
+                        navController.getBackStackEntry(TabRoute.Orders.route)
+                            .savedStateHandle.set("orders_refresh", Clock.System.now().toEpochMilliseconds())
+                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                            "customer_refresh",
+                            Clock.System.now().toEpochMilliseconds(),
+                        )
+                        navController.popBackStack()
+                    },
                 )
             }
 
@@ -323,7 +346,7 @@ fun AppNavHost(
                         onBack = { navController.popBackStack() },
                         onSaved = {
                             navController.getBackStackEntry(TabRoute.Products.route)
-                                .savedStateHandle["products_refresh"] = System.currentTimeMillis()
+                                .savedStateHandle.set("products_refresh", Clock.System.now().toEpochMilliseconds())
                             navController.popBackStack()
                         },
                     )
@@ -337,7 +360,7 @@ fun AppNavHost(
                         onBack = { navController.popBackStack() },
                         onSaved = {
                             navController.getBackStackEntry(TabRoute.Products.route)
-                                .savedStateHandle["products_refresh"] = System.currentTimeMillis()
+                                .savedStateHandle.set("products_refresh", Clock.System.now().toEpochMilliseconds())
                             navController.popBackStack()
                         },
                     )
@@ -355,7 +378,15 @@ fun AppNavHost(
                     paymentId = null,
                     initialCustomerId = customerId,
                     onBack = { navController.popBackStack() },
-                    onSaved = { navController.popBackStack() },
+                    onSaved = {
+                        navController.getBackStackEntry(TabRoute.Payments.route)
+                            .savedStateHandle.set("payments_refresh", Clock.System.now().toEpochMilliseconds())
+                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                            "customer_refresh",
+                            Clock.System.now().toEpochMilliseconds(),
+                        )
+                        navController.popBackStack()
+                    },
                 )
             }
             composable("payments/edit/{id}") { entry ->
@@ -366,7 +397,15 @@ fun AppNavHost(
                     paymentId = id,
                     initialCustomerId = null,
                     onBack = { navController.popBackStack() },
-                    onSaved = { navController.popBackStack() },
+                    onSaved = {
+                        navController.getBackStackEntry(TabRoute.Payments.route)
+                            .savedStateHandle.set("payments_refresh", Clock.System.now().toEpochMilliseconds())
+                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                            "customer_refresh",
+                            Clock.System.now().toEpochMilliseconds(),
+                        )
+                        navController.popBackStack()
+                    },
                 )
             }
 

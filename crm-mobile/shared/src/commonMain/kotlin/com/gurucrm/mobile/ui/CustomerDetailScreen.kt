@@ -49,6 +49,7 @@ fun CustomerDetailScreen(
     platform: PlatformServices,
     user: UserDto,
     customerId: String,
+    listRefreshKey: Long = 0L,
     onBack: () -> Unit,
     onEdit: () -> Unit = {},
     onNewOrder: () -> Unit = {},
@@ -62,7 +63,7 @@ fun CustomerDetailScreen(
     var insights by remember { mutableStateOf<List<CustomerProductInsightDto>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(customerId) {
+    LaunchedEffect(customerId, listRefreshKey) {
         loading = true
         error = null
         try {
@@ -184,7 +185,19 @@ fun CustomerDetailScreen(
                     }
 
                     GuruSectionTitle("Balance")
+                    Text(
+                        "Ordered Rs ${c.balance.totalOrders.toLong()} · Paid Rs ${c.balance.totalPaid.toLong()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     BalanceChip(c.balance.remaining)
+                    if (c.balance.pendingSettlement > 0) {
+                        Text(
+                            "Pending credit/cheque: Rs ${c.balance.pendingSettlement.toLong()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
 
                     if (coords != null) {
                         GuruSectionTitle("Location")

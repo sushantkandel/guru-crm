@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import EditAudit from '../components/EditAudit';
@@ -17,6 +17,8 @@ import {
   formAlertError,
 } from '../utils/formStyles';
 
+const emptyBalance = { totalOrders: 0, totalPaid: 0, remaining: 0, pendingSettlement: 0 };
+
 export default function PaymentForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -24,6 +26,8 @@ export default function PaymentForm() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [customerBalance, setCustomerBalance] = useState(emptyBalance);
+  const [orderBalance, setOrderBalance] = useState(null);
   const [form, setForm] = useState({
     customerId: searchParams.get('customer') || '',
     orderId: '',
@@ -65,14 +69,37 @@ export default function PaymentForm() {
   }, [id, isEdit]);
 
   useEffect(() => {
-    if (form.customerId) {
-      api.get('/orders', { params: { customer_id: form.customerId } }).then((res) => {
-        setOrders(res.data.filter((o) => o.status !== 'cancelled'));
-      });
-    } else {
+    if (!form.customerId) {
+      setCustomerBalance(emptyBalance);
       setOrders([]);
+      return;
     }
+    api.get(`/customers/${form.customerId}/balance`).then((res) => setCustomerBalance(res.data));
+    api.get('/orders', { params: { customer_id: form.customerId } }).then((res) => {
+      setOrders(res.data.filter((o) => o.status !== 'cancelled'));
+    });
   }, [form.customerId]);
+
+  useEffect(() => {
+    if (!form.orderId) {
+      setOrderBalance(null);
+      return;
+    }
+    api.get(`/orders/${form.orderId}/balance`).then((res) => setOrderBalance(res.data)).catch(() => {
+      setOrderBalance(null);
+    });
+  }, [form.orderId]);
+
+  const effectiveStatus = useMemo(() => {
+    if (isEdit) return form.status;
+    if (form.paymentType === 'credit' || form.paymentType === 'cheque') return 'pending';
+    return 'completed';
+  }, [form.paymentType, form.status, isEdit]);
+
+  const amountNum = Number(form.amount) || 0;
+  const remainingAfterPayment = effectiveStatus === 'completed'
+    ? Math.max(0, customerBalance.remaining - amountNum)
+    : customerBalance.remaining;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,7 +114,7 @@ export default function PaymentForm() {
       qrReference: form.qrReference || null,
       qrProvider: form.qrProvider || null,
       creditDueDate: form.creditDueDate || null,
-      status: form.paymentType === 'credit' && !isEdit ? 'pending' : form.status,
+      status: effectiveStatus,
     };
     try {
       if (isEdit) {
@@ -100,6 +127,13 @@ export default function PaymentForm() {
       setError(err.response?.data?.error || `Failed to ${isEdit ? 'update' : 'record'} payment`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fillRemaining = () => {
+    const target = orderBalance?.remainingOnOrder ?? customerBalance.remaining;
+    if (target > 0) {
+      setForm((prev) => ({ ...prev, amount: String(target) }));
     }
   };
 
@@ -122,11 +156,22 @@ export default function PaymentForm() {
             <option value="">Select customer</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.shopName} — Remaining: Rs {c.balance?.remaining?.toLocaleString() || 0}
+                {c.shopName} — Due: Rs {c.balance?.remaining?.toLocaleString() || 0}
               </option>
             ))}
           </select>
         </div>
+
+        {form.customerId && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-1">
+            <p><strong>Ordered:</strong> Rs {customerBalance.totalOrders.toLocaleString()}</p>
+            <p><strong>Paid:</strong> Rs {customerBalance.totalPaid.toLocaleString()}</p>
+            <p><strong>Balance due:</strong> Rs {customerBalance.remaining.toLocaleString()}</p>
+            {customerBalance.pendingSettlement > 0 && (
+              <p><strong>Pending credit/cheque:</strong> Rs {customerBalance.pendingSettlement.toLocaleString()}</p>
+            )}
+          </div>
+        )}
 
         <div>
           <label className={formLabel}>Link to Order (optional)</label>
@@ -142,6 +187,11 @@ export default function PaymentForm() {
               </option>
             ))}
           </select>
+          {orderBalance && (
+            <p className={formHint}>
+              Order total Rs {orderBalance.orderTotal.toLocaleString()} · Paid Rs {orderBalance.paidOnOrder.toLocaleString()} · Remaining Rs {orderBalance.remainingOnOrder.toLocaleString()}
+            </p>
+          )}
         </div>
 
         <div>
@@ -165,11 +215,24 @@ export default function PaymentForm() {
               type="number"
               min="0.01"
               step="0.01"
+              max={effectiveStatus === 'completed' ? customerBalance.remaining || undefined : undefined}
               className={formInput}
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
               required
             />
+            {form.customerId && customerBalance.remaining > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button type="button" onClick={fillRemaining} className="text-sm text-blue-600 hover:underline">
+                  Pay full remaining
+                </button>
+                {amountNum > 0 && effectiveStatus === 'completed' && (
+                  <span className={formHint}>
+                    Rs {remainingAfterPayment.toLocaleString()} will remain due after this payment
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <label className={formLabel}>Payment Date *</label>
@@ -208,6 +271,9 @@ export default function PaymentForm() {
               <label className={formLabel}>Bank Name</label>
               <input className={formInput} value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} />
             </div>
+            {!isEdit && (
+              <p className={`${formHint} lg:col-span-2`}>Cheque payments are saved as pending until marked completed.</p>
+            )}
           </div>
         )}
 
@@ -240,7 +306,7 @@ export default function PaymentForm() {
               onChange={(e) => setForm({ ...form, creditDueDate: e.target.value })}
             />
             {!isEdit && (
-              <p className={formHint}>Credit payments are saved as pending until marked completed.</p>
+              <p className={formHint}>Credit payments are saved as pending until marked completed. Balance due is unchanged until then.</p>
             )}
           </div>
         )}
