@@ -37,6 +37,13 @@ function canAccessCustomer(user, customer) {
   return customer.assignedTo === user.id;
 }
 
+const paymentCustomerSelect = {
+  id: true,
+  name: true,
+  shopName: true,
+  phone: true,
+};
+
 router.get('/', async (req, res, next) => {
   try {
     const customers = await listCustomers(req.query, req.user, req.companyId);
@@ -141,6 +148,7 @@ router.get('/:id', async (req, res, next) => {
         },
         payments: {
           include: {
+            customer: { select: paymentCustomerSelect },
             creator: auditInclude.creator,
             updater: auditInclude.updater,
           },

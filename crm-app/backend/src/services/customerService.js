@@ -160,7 +160,12 @@ async function listCustomers(query, user, companyId) {
   const balances = await getCustomerBalances(customers.map((c) => c.id));
 
   let result = customers.map((c) => {
-    const balance = balances[c.id] || { totalOrders: 0, totalPaid: 0, remaining: 0 };
+    const balance = balances[c.id] || {
+      totalOrders: 0,
+      totalPaid: 0,
+      remaining: 0,
+      pendingSettlement: 0,
+    };
     return {
       id: c.id,
       name: c.name,

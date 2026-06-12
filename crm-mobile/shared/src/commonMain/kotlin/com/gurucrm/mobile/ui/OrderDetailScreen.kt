@@ -59,7 +59,7 @@ fun OrderDetailScreen(
                 val loaded = api.order(orderId)
                 order = loaded
                 customerRemaining = loaded.customer?.id?.let { cid ->
-                    api.customer(cid).balance.remaining
+                    api.customerBalance(cid).remaining
                 } ?: 0.0
             } catch (e: Exception) {
                 error = e.message

@@ -99,7 +99,11 @@ router.get('/:id', async (req, res, next) => {
       include: {
         customer: true,
         items: true,
-        payments: true,
+        payments: {
+          include: {
+            customer: { select: { id: true, name: true, shopName: true, phone: true } },
+          },
+        },
         ...auditInclude,
       },
     });

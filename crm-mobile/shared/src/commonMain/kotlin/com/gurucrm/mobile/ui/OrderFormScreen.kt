@@ -85,11 +85,23 @@ fun OrderFormScreen(
 
     LaunchedEffect(Unit) {
         loadError = null
+        var customerError: String? = null
+        var productError: String? = null
         try {
             customers = api.customers()
+        } catch (e: Exception) {
+            customerError = e.message ?: "Failed to load customers"
+        }
+        try {
             products = api.products(activeOnly = true)
         } catch (e: Exception) {
-            loadError = e.message ?: "Failed to load customers or products"
+            productError = e.message ?: "Failed to load products"
+        }
+        when {
+            customerError != null && productError != null ->
+                loadError = "$customerError; $productError"
+            customerError != null -> loadError = customerError
+            productError != null -> loadError = productError
         }
         if (orderDate.isBlank()) {
             orderDate = kotlinx.datetime.Clock.System.now().toString().take(10)
