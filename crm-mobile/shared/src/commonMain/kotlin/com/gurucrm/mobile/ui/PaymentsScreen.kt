@@ -151,7 +151,7 @@ fun PaymentsScreen(
                 tab == 1 -> LazyColumn {
                     items(pendingPayments, key = { it.id }) { payment ->
                         GuruCard(onClick = { if (user.canEdit()) onEditPayment(payment.id) }) {
-                            Text(payment.customer.shopName, style = MaterialTheme.typography.titleSmall)
+                            Text(payment.customer?.shopName ?: "—", style = MaterialTheme.typography.titleSmall)
                             Row(Modifier.padding(vertical = GuruSpacing.xs)) {
                                 StatusBadge(payment.status)
                                 Text(
@@ -179,7 +179,7 @@ fun PaymentsScreen(
                 else -> LazyColumn {
                     items(payments, key = { it.id }) { payment ->
                         GuruCard(onClick = { if (user.canEdit()) onEditPayment(payment.id) }) {
-                            Text(payment.customer.shopName, style = MaterialTheme.typography.titleSmall)
+                            Text(payment.customer?.shopName ?: "—", style = MaterialTheme.typography.titleSmall)
                             Row(Modifier.padding(vertical = GuruSpacing.xs)) {
                                 StatusBadge(payment.status)
                                 Text(

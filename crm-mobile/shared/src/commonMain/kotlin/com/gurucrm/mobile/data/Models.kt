@@ -236,7 +236,7 @@ data class PaymentDto(
     val qrReference: String? = null,
     val qrProvider: String? = null,
     val creditDueDate: String? = null,
-    val customer: PaymentCustomerDto,
+    val customer: PaymentCustomerDto? = null,
 )
 
 @Serializable

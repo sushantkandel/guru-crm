@@ -110,7 +110,7 @@ fun PaymentFormScreen(
         loading = true
         try {
             val p = api.payment(paymentId!!)
-            customerId = p.customerId ?: p.customer.id
+            customerId = p.customerId ?: p.customer?.id.orEmpty()
             orderId = p.orderId.orEmpty()
             paymentType = p.paymentType
             amount = p.amount.toString()

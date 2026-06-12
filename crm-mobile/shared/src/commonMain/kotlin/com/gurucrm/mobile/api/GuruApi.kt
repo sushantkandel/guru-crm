@@ -85,6 +85,7 @@ class GuruApi(private val tokenStore: TokenStore) {
         ignoreUnknownKeys = true
         isLenient = true
         encodeDefaults = false
+        coerceInputValues = true
     }
 
     private val client = createPlatformHttpClient {
