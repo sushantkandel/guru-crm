@@ -177,7 +177,7 @@ export default function Payments() {
                       <td className="text-right text-green-700">Rs {c.balance.totalPaid.toLocaleString()}</td>
                       <td className="text-right font-bold text-red-600">Rs {c.balance.remaining.toLocaleString()}</td>
                       <td className="text-right text-amber-700">
-                        {c.balance.pendingSettlement > 0
+                        {(c.balance.pendingSettlement || 0) > 0
                           ? `Rs ${c.balance.pendingSettlement.toLocaleString()}`
                           : '—'}
                       </td>

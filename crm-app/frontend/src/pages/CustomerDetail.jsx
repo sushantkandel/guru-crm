@@ -27,6 +27,7 @@ import {
   btnToolbarWarning,
   btnLink,
   btnLinkDanger,
+  btnLinkSuccess,
   btnLinkWarning,
   badgeGreen,
   badgeAmber,
@@ -123,6 +124,15 @@ export default function CustomerDetail() {
       load();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
+
+  const markPaymentCompleted = async (paymentId) => {
+    try {
+      await api.patch(`/payments/${paymentId}/status`, { status: 'completed' });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to mark payment completed');
     }
   };
 
@@ -244,6 +254,11 @@ export default function CustomerDetail() {
           <p className={`text-lg font-bold mt-2 ${customer.balance.remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
             Remaining: Rs {customer.balance.remaining.toLocaleString()}
           </p>
+          {(customer.balance.pendingSettlement || 0) > 0 && (
+            <p className="text-sm text-amber-700 mt-1">
+              Pending credit/cheque: Rs {customer.balance.pendingSettlement.toLocaleString()}
+            </p>
+          )}
         </div>
       </div>
 
@@ -354,6 +369,11 @@ export default function CustomerDetail() {
                     {canEdit && (
                       <td className="whitespace-nowrap space-x-2">
                         <Link to={`/payments/${p.id}/edit`} className={btnLink}>Edit</Link>
+                        {p.status === 'pending' && (
+                          <button type="button" onClick={() => markPaymentCompleted(p.id)} className={btnLinkSuccess}>
+                            Mark completed
+                          </button>
+                        )}
                         {canDelete && !hasOutstandingBalance && (
                           <button type="button" onClick={() => setDeleteDialog({ type: 'payment', id: p.id })} className={btnLinkDanger}>
                             Delete

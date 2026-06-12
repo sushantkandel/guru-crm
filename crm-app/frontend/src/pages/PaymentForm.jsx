@@ -167,7 +167,7 @@ export default function PaymentForm() {
             <p><strong>Ordered:</strong> Rs {customerBalance.totalOrders.toLocaleString()}</p>
             <p><strong>Paid:</strong> Rs {customerBalance.totalPaid.toLocaleString()}</p>
             <p><strong>Balance due:</strong> Rs {customerBalance.remaining.toLocaleString()}</p>
-            {customerBalance.pendingSettlement > 0 && (
+            {(customerBalance.pendingSettlement || 0) > 0 && (
               <p><strong>Pending credit/cheque:</strong> Rs {customerBalance.pendingSettlement.toLocaleString()}</p>
             )}
           </div>

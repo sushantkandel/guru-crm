@@ -261,6 +261,9 @@ data class PaymentStatusRequest(val status: String)
 data class PaymentCreateResponse(val payment: PaymentDto)
 
 @Serializable
+data class PaymentUpdateResponse(val payment: PaymentDto)
+
+@Serializable
 data class OutstandingDto(
     val id: String,
     val name: String,

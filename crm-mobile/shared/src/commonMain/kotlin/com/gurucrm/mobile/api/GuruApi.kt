@@ -33,6 +33,7 @@ import com.gurucrm.mobile.data.OrderStatusRequest
 import com.gurucrm.mobile.data.OrderUpdateRequest
 import com.gurucrm.mobile.data.OutstandingDto
 import com.gurucrm.mobile.data.PaymentCreateResponse
+import com.gurucrm.mobile.data.PaymentUpdateResponse
 import com.gurucrm.mobile.data.PaymentDto
 import com.gurucrm.mobile.data.PaymentQuery
 import com.gurucrm.mobile.data.PaymentStatusRequest
@@ -385,10 +386,10 @@ class GuruApi(private val tokenStore: TokenStore) {
         authorizedPost<PaymentCreateResponse>("/payments", body).payment
 
     suspend fun updatePayment(id: String, body: PaymentUpsertRequest): PaymentDto =
-        authorizedPut("/payments/$id", body)
+        authorizedPut<PaymentUpdateResponse>("/payments/$id", body).payment
 
     suspend fun updatePaymentStatus(id: String, status: String): PaymentDto =
-        authorizedPatch("/payments/$id/status", PaymentStatusRequest(status))
+        authorizedPatch<PaymentUpdateResponse>("/payments/$id/status", PaymentStatusRequest(status)).payment
 
     suspend fun deletePayment(id: String) = authorizedDelete("/payments/$id")
 
