@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useId } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import {
@@ -34,6 +34,7 @@ export default function CustomerProductInsights({
   autoStart = false,
   initialProductId = '',
 }) {
+  const fieldId = useId();
   const [products, setProducts] = useState([]);
   const [insights, setInsights] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -260,8 +261,8 @@ export default function CustomerProductInsights({
             </button>
           </div>
           <div>
-            <label className={formLabel}>Product</label>
-            <select
+            <label htmlFor={`${fieldId}-product`} className={formLabel}>Product</label>
+            <select id={`${fieldId}-product`}
               className={formInput}
               value={selectedProductId}
               onChange={(e) => selectProduct(e.target.value)}
@@ -276,8 +277,8 @@ export default function CustomerProductInsights({
           {selectedProductId && (
             <>
               <div>
-                <label className={formLabel}>Knows this product?</label>
-                <select
+                <label htmlFor={`${fieldId}-knows-this-product`} className={formLabel}>Knows this product?</label>
+                <select id={`${fieldId}-knows-this-product`}
                   className={formInput}
                   value={knowsProduct === null ? '' : knowsProduct ? 'true' : 'false'}
                   onChange={(e) => {
@@ -298,8 +299,8 @@ export default function CustomerProductInsights({
 
               {knowsProduct && (
                 <div>
-                  <label className={formLabel}>Still selling?</label>
-                  <select
+                  <label htmlFor={`${fieldId}-still-selling`} className={formLabel}>Still selling?</label>
+                  <select id={`${fieldId}-still-selling`}
                     className={formInput}
                     value={isSelling === null ? '' : isSelling ? 'true' : 'false'}
                     onChange={(e) => {
@@ -317,8 +318,8 @@ export default function CustomerProductInsights({
 
               {knowsProduct && isSelling === false && (
                 <div>
-                  <label className={formLabel}>Why did they stop selling?</label>
-                  <textarea
+                  <label htmlFor={`${fieldId}-why-did-they-stop-selling`} className={formLabel}>Why did they stop selling?</label>
+                  <textarea id={`${fieldId}-why-did-they-stop-selling`}
                     className={formInput}
                     rows={3}
                     value={discontinuedReason}
@@ -415,8 +416,8 @@ export default function CustomerProductInsights({
               )}
 
               <div>
-                <label className={formLabel}>Notes</label>
-                <textarea
+                <label htmlFor={`${fieldId}-notes`} className={formLabel}>Notes</label>
+                <textarea id={`${fieldId}-notes`}
                   className={formInput}
                   rows={2}
                   value={notes}

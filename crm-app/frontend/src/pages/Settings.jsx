@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import api from '../services/api';
 import NepalLocationSelect from '../components/NepalLocationSelect';
 import PageHeader from '../components/PageHeader';
@@ -18,6 +18,7 @@ import {
 } from '../utils/formStyles';
 
 export default function Settings() {
+  const fieldId = useId();
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -133,16 +134,16 @@ export default function Settings() {
         <h3 className={formSectionTitle}>Company Info</h3>
         <form onSubmit={handleSaveCompany} className="space-y-4 sm:space-y-5">
           <div>
-            <label className={formLabel}>Company Name</label>
-            <input className={formInput} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <label htmlFor={`${fieldId}-company-name`} className={formLabel}>Company Name</label>
+            <input id={`${fieldId}-company-name`} className={formInput} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </div>
           <div>
-            <label className={formLabel}>Phone</label>
-            <input className={formInput} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <label htmlFor={`${fieldId}-phone`} className={formLabel}>Phone</label>
+            <input id={`${fieldId}-phone`} className={formInput} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div>
-            <label className={formLabel}>Country</label>
-            <input className={formInput} value="Nepal" readOnly />
+            <label htmlFor={`${fieldId}-country`} className={formLabel}>Country</label>
+            <input id={`${fieldId}-country`} className={formInput} value="Nepal" readOnly />
           </div>
           <NepalLocationSelect
             includeWard={false}
@@ -154,8 +155,8 @@ export default function Settings() {
             }
           />
           <div>
-            <label className={formLabel}>Street Name *</label>
-            <input
+            <label htmlFor={`${fieldId}-street-name`} className={formLabel}>Street Name *</label>
+            <input id={`${fieldId}-street-name`}
               className={formInput}
               value={form.address.street}
               onChange={(e) => setForm({ ...form, address: { ...form.address, street: e.target.value } })}

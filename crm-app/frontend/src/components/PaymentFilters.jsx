@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import api from '../services/api';
 import NepalLocationSelect from './NepalLocationSelect';
 import { formLabel, formInput, pageCardPadded } from '../utils/formStyles';
@@ -15,6 +15,7 @@ export const defaultPaymentFilters = {
 };
 
 export default function PaymentFilters({ filters, onChange }) {
+  const fieldId = useId();
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
@@ -25,8 +26,8 @@ export default function PaymentFilters({ filters, onChange }) {
     <div className={`${pageCardPadded} space-y-4`}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <div>
-          <label className={formLabel}>Shop / company name</label>
-          <input
+          <label htmlFor={`${fieldId}-shop-company-name`} className={formLabel}>Shop / company name</label>
+          <input id={`${fieldId}-shop-company-name`}
             className={formInput}
             placeholder="e.g. Sundar Shop"
             value={filters.shop_name}
@@ -34,8 +35,8 @@ export default function PaymentFilters({ filters, onChange }) {
           />
         </div>
         <div>
-          <label className={formLabel}>Customer name</label>
-          <input
+          <label htmlFor={`${fieldId}-customer-name`} className={formLabel}>Customer name</label>
+          <input id={`${fieldId}-customer-name`}
             className={formInput}
             placeholder="Contact person name"
             value={filters.customer_name}
@@ -43,8 +44,8 @@ export default function PaymentFilters({ filters, onChange }) {
           />
         </div>
         <div>
-          <label className={formLabel}>Mobile number</label>
-          <input
+          <label htmlFor={`${fieldId}-mobile-number`} className={formLabel}>Mobile number</label>
+          <input id={`${fieldId}-mobile-number`}
             type="tel"
             className={formInput}
             placeholder="Phone number"
@@ -65,8 +66,8 @@ export default function PaymentFilters({ filters, onChange }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <div>
-          <label className={formLabel}>Product item</label>
-          <select
+          <label htmlFor={`${fieldId}-product-item`} className={formLabel}>Product item</label>
+          <select id={`${fieldId}-product-item`}
             className={formInput}
             value={filters.product_id}
             onChange={(e) => onChange({ ...filters, product_id: e.target.value })}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NepalLocationSelect from '../components/NepalLocationSelect';
@@ -27,6 +27,7 @@ const emptyAddress = {
 };
 
 export default function RegisterCompany() {
+  const fieldId = useId();
   const location = useLocation();
   const registerState = location.state || {};
 
@@ -80,8 +81,8 @@ export default function RegisterCompany() {
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className={formLabel}>Company Name *</label>
-            <input
+            <label htmlFor={`${fieldId}-company-name`} className={formLabel}>Company Name *</label>
+            <input id={`${fieldId}-company-name`}
               className={formInput}
               value={form.companyName}
               onChange={(e) => setForm({ ...form, companyName: e.target.value })}
@@ -92,8 +93,8 @@ export default function RegisterCompany() {
           <fieldset className={formFieldset}>
             <legend className={formLegend}>Company Address (Nepal) *</legend>
             <div>
-              <label className={formLabel}>Country</label>
-              <input className={formInput} value="Nepal" readOnly />
+              <label htmlFor={`${fieldId}-country`} className={formLabel}>Country</label>
+              <input id={`${fieldId}-country`} className={formInput} value="Nepal" readOnly />
             </div>
             <NepalLocationSelect
               includeWard={false}
@@ -108,8 +109,8 @@ export default function RegisterCompany() {
               }
             />
             <div>
-              <label className={formLabel}>Street Name *</label>
-              <input
+              <label htmlFor={`${fieldId}-street-name`} className={formLabel}>Street Name *</label>
+              <input id={`${fieldId}-street-name`}
                 className={formInput}
                 value={form.address.street}
                 onChange={(e) => setForm({ ...form, address: { ...form.address, street: e.target.value } })}
@@ -120,8 +121,8 @@ export default function RegisterCompany() {
           </fieldset>
 
           <div>
-            <label className={formLabel}>Your Name (Owner) *</label>
-            <input
+            <label htmlFor={`${fieldId}-your-name-owner`} className={formLabel}>Your Name (Owner) *</label>
+            <input id={`${fieldId}-your-name-owner`}
               className={formInput}
               value={form.ownerName}
               onChange={(e) => setForm({ ...form, ownerName: e.target.value })}
@@ -129,8 +130,8 @@ export default function RegisterCompany() {
             />
           </div>
           <div>
-            <label className={formLabel}>Email *</label>
-            <input
+            <label htmlFor={`${fieldId}-email`} className={formLabel}>Email *</label>
+            <input id={`${fieldId}-email`}
               type="email"
               className={formInput}
               value={form.email}
@@ -139,8 +140,8 @@ export default function RegisterCompany() {
             />
           </div>
           <div>
-            <label className={formLabel}>Password *</label>
-            <PasswordInput
+            <label htmlFor={`${fieldId}-password`} className={formLabel}>Password *</label>
+            <PasswordInput id={`${fieldId}-password`}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               minLength={6}
@@ -148,8 +149,8 @@ export default function RegisterCompany() {
             />
           </div>
           <div>
-            <label className={formLabel}>Company Phone *</label>
-            <input
+            <label htmlFor={`${fieldId}-company-phone`} className={formLabel}>Company Phone *</label>
+            <input id={`${fieldId}-company-phone`}
               className={formInput}
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}

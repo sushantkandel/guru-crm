@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import api from '../services/api';
 import { formLabel, formSelect } from '../utils/formStyles';
 
@@ -13,6 +13,7 @@ export default function NepalLocationSelect({
   includeWard = true,
   className = '',
 }) {
+  const fieldId = useId();
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
@@ -63,8 +64,8 @@ export default function NepalLocationSelect({
     <div className={`${gridClass} ${className}`}>
       {loadError && <p className="col-span-full text-sm text-red-600">{loadError}</p>}
       <div>
-        <label className={formLabel}>Province *</label>
-        <select
+        <label htmlFor={`${fieldId}-province`} className={formLabel}>Province *</label>
+        <select id={`${fieldId}-province`}
           className={formSelect}
           value={province}
           onChange={(e) => onChange({ ...emptyLoc, province: e.target.value })}
@@ -77,8 +78,8 @@ export default function NepalLocationSelect({
         </select>
       </div>
       <div>
-        <label className={formLabel}>District *</label>
-        <select
+        <label htmlFor={`${fieldId}-district`} className={formLabel}>District *</label>
+        <select id={`${fieldId}-district`}
           className={formSelect}
           value={district}
           disabled={!province}
@@ -92,8 +93,8 @@ export default function NepalLocationSelect({
         </select>
       </div>
       <div>
-        <label className={formLabel}>Municipality *</label>
-        <select
+        <label htmlFor={`${fieldId}-municipality`} className={formLabel}>Municipality *</label>
+        <select id={`${fieldId}-municipality`}
           className={formSelect}
           value={municipality}
           disabled={!district}
@@ -108,8 +109,8 @@ export default function NepalLocationSelect({
       </div>
       {includeWard && (
         <div>
-          <label className={formLabel}>Ward *</label>
-          <select
+          <label htmlFor={`${fieldId}-ward`} className={formLabel}>Ward *</label>
+          <select id={`${fieldId}-ward`}
             className={formSelect}
             value={ward}
             disabled={!municipality}

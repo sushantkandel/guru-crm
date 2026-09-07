@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useId } from 'react';
 import api from '../services/api';
 import ConfirmDialog from './ConfirmDialog';
 import {
@@ -30,6 +30,7 @@ function fileNameFromDisposition(header) {
 }
 
 export default function BackupRestoreSection() {
+  const fieldId = useId();
   const fileRef = useRef(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -153,8 +154,8 @@ export default function BackupRestoreSection() {
         <hr className="border-slate-200" />
 
         <div>
-          <label className={formLabel}>Restore from backup ZIP</label>
-          <input
+          <label htmlFor={`${fieldId}-restore-from-backup-zip`} className={formLabel}>Restore from backup ZIP</label>
+          <input id={`${fieldId}-restore-from-backup-zip`}
             ref={fileRef}
             type="file"
             accept=".zip,application/zip"
@@ -204,8 +205,8 @@ export default function BackupRestoreSection() {
         {preview && safetyDownloaded && (
           <div className="space-y-3">
             <div>
-              <label className={formLabel}>Type RESTORE to confirm</label>
-              <input
+              <label htmlFor={`${fieldId}-type-restore-to-confirm`} className={formLabel}>Type RESTORE to confirm</label>
+              <input id={`${fieldId}-type-restore-to-confirm`}
                 className={formInput}
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}

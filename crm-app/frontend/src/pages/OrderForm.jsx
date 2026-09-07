@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import ProductSelect from '../components/ProductSelect';
@@ -22,6 +22,7 @@ import {
 const emptyItem = () => ({ productId: '', productName: '', quantity: 1, unit: 'packet', unitPrice: 0 });
 
 export default function OrderForm() {
+  const fieldId = useId();
   const { id } = useParams();
   const isEdit = Boolean(id);
   const [searchParams] = useSearchParams();
@@ -120,8 +121,8 @@ export default function OrderForm() {
       <form onSubmit={handleSubmit} className={formCard}>
         <div className={formGrid2}>
           <div>
-            <label className={formLabel}>Customer *</label>
-            <select
+            <label htmlFor={`${fieldId}-customer`} className={formLabel}>Customer *</label>
+            <select id={`${fieldId}-customer`}
               className={formInput}
               value={form.customerId}
               onChange={(e) => setForm({ ...form, customerId: e.target.value })}
@@ -135,8 +136,8 @@ export default function OrderForm() {
             </select>
           </div>
           <div>
-            <label className={formLabel}>Order Date *</label>
-            <input
+            <label htmlFor={`${fieldId}-order-date`} className={formLabel}>Order Date *</label>
+            <input id={`${fieldId}-order-date`}
               type="date"
               className={formInput}
               value={form.orderDate}
@@ -157,16 +158,17 @@ export default function OrderForm() {
             <div key={index} className={formOrderItem}>
               <div className={formOrderItemGrid}>
                 <div className="lg:col-span-4">
-                  <label className="form-label lg:hidden">Product</label>
+                  <label htmlFor={`${fieldId}-item-${index}-product`} className="form-label lg:hidden">Product</label>
                   <ProductSelect
+                    id={`${fieldId}-item-${index}-product`}
                     className={formInput}
                     value={item}
                     onChange={(data) => handleProductSelect(index, data)}
                   />
                 </div>
                 <div className="lg:col-span-2">
-                  <label className="form-label lg:hidden">Quantity</label>
-                  <input
+                  <label htmlFor={`${fieldId}-item-${index}-quantity`} className="form-label lg:hidden">Quantity</label>
+                  <input id={`${fieldId}-item-${index}-quantity`}
                     type="number"
                     min="0.01"
                     step="0.01"
@@ -178,8 +180,8 @@ export default function OrderForm() {
                   />
                 </div>
                 <div className="lg:col-span-2">
-                  <label className="form-label lg:hidden">Unit</label>
-                  <select
+                  <label htmlFor={`${fieldId}-item-${index}-unit`} className="form-label lg:hidden">Unit</label>
+                  <select id={`${fieldId}-item-${index}-unit`}
                     className={formInput}
                     value={item.unit}
                     onChange={(e) => updateItem(index, 'unit', e.target.value)}
@@ -190,8 +192,8 @@ export default function OrderForm() {
                   </select>
                 </div>
                 <div className="lg:col-span-2">
-                  <label className="form-label lg:hidden">Unit price</label>
-                  <input
+                  <label htmlFor={`${fieldId}-item-${index}-unit-price`} className="form-label lg:hidden">Unit price</label>
+                  <input id={`${fieldId}-item-${index}-unit-price`}
                     type="number"
                     min="0"
                     step="0.01"
@@ -218,8 +220,8 @@ export default function OrderForm() {
         </div>
 
         <div>
-          <label className={formLabel}>Notes</label>
-          <textarea
+          <label htmlFor={`${fieldId}-notes`} className={formLabel}>Notes</label>
+          <textarea id={`${fieldId}-notes`}
             className={formInput}
             rows={3}
             value={form.notes}

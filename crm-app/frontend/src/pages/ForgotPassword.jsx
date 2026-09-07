@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import AppLogo from '../components/AppLogo';
@@ -15,6 +15,7 @@ import {
 } from '../utils/formStyles';
 
 export default function ForgotPassword() {
+  const fieldId = useId();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -47,8 +48,8 @@ export default function ForgotPassword() {
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className={formLabel}>Email</label>
-            <input
+            <label htmlFor={`${fieldId}-email`} className={formLabel}>Email</label>
+            <input id={`${fieldId}-email`}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

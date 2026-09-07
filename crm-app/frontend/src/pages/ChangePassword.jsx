@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import PasswordInput from '../components/PasswordInput';
@@ -16,6 +16,7 @@ import {
 } from '../utils/formStyles';
 
 export default function ChangePassword() {
+  const fieldId = useId();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     currentPassword: '',
@@ -61,16 +62,16 @@ export default function ChangePassword() {
 
       <form onSubmit={handleSubmit} className={formCard}>
         <div>
-          <label className={formLabel}>Current Password</label>
-          <PasswordInput
+          <label htmlFor={`${fieldId}-current-password`} className={formLabel}>Current Password</label>
+          <PasswordInput id={`${fieldId}-current-password`}
             value={form.currentPassword}
             onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
             required
           />
         </div>
         <div>
-          <label className={formLabel}>New Password</label>
-          <PasswordInput
+          <label htmlFor={`${fieldId}-new-password`} className={formLabel}>New Password</label>
+          <PasswordInput id={`${fieldId}-new-password`}
             value={form.newPassword}
             onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
             required
@@ -78,8 +79,8 @@ export default function ChangePassword() {
           />
         </div>
         <div>
-          <label className={formLabel}>Confirm New Password</label>
-          <PasswordInput
+          <label htmlFor={`${fieldId}-confirm-new-password`} className={formLabel}>Confirm New Password</label>
+          <PasswordInput id={`${fieldId}-confirm-new-password`}
             value={form.confirmPassword}
             onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
             required

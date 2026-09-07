@@ -1,9 +1,11 @@
+import { useId } from 'react';
 import NepalLocationSelect from './NepalLocationSelect';
 import { CUSTOMER_TYPES } from '../constants/customerTypes';
 import { useActiveProducts } from '../hooks/useActiveProducts';
 import { formLabel, formInput, pageCardPadded } from '../utils/formStyles';
 
 export default function CustomerFilters({ filters, onChange }) {
+  const fieldId = useId();
   const { products } = useActiveProducts();
 
   const toggleCustomerType = (value) => {
@@ -20,8 +22,8 @@ export default function CustomerFilters({ filters, onChange }) {
     <div className={`${pageCardPadded} space-y-4`}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="lg:col-span-2">
-          <label className={formLabel}>Search</label>
-          <input
+          <label htmlFor={`${fieldId}-search`} className={formLabel}>Search</label>
+          <input id={`${fieldId}-search`}
             className={formInput}
             placeholder="Name, shop, phone, PAN/VAT..."
             value={filters.q}
@@ -29,8 +31,8 @@ export default function CustomerFilters({ filters, onChange }) {
           />
         </div>
         <div>
-          <label className={formLabel}>Conversion status</label>
-          <select
+          <label htmlFor={`${fieldId}-conversion-status`} className={formLabel}>Conversion status</label>
+          <select id={`${fieldId}-conversion-status`}
             className={formInput}
             value={filters.business_status}
             onChange={(e) => onChange({ ...filters, business_status: e.target.value })}
@@ -42,8 +44,8 @@ export default function CustomerFilters({ filters, onChange }) {
           </select>
         </div>
         <div>
-          <label className={formLabel}>Product</label>
-          <select
+          <label htmlFor={`${fieldId}-product`} className={formLabel}>Product</label>
+          <select id={`${fieldId}-product`}
             className={formInput}
             value={filters.product_id}
             onChange={(e) => onChange({ ...filters, product_id: e.target.value })}
@@ -55,8 +57,8 @@ export default function CustomerFilters({ filters, onChange }) {
           </select>
         </div>
         <div>
-          <label className={formLabel}>Knows product</label>
-          <select
+          <label htmlFor={`${fieldId}-knows-product`} className={formLabel}>Knows product</label>
+          <select id={`${fieldId}-knows-product`}
             className={formInput}
             value={filters.knows_product}
             onChange={(e) => onChange({ ...filters, knows_product: e.target.value })}
@@ -68,8 +70,8 @@ export default function CustomerFilters({ filters, onChange }) {
           </select>
         </div>
         <div>
-          <label className={formLabel}>Still selling</label>
-          <select
+          <label htmlFor={`${fieldId}-still-selling`} className={formLabel}>Still selling</label>
+          <select id={`${fieldId}-still-selling`}
             className={formInput}
             value={filters.is_selling}
             onChange={(e) => onChange({ ...filters, is_selling: e.target.value })}
@@ -81,8 +83,8 @@ export default function CustomerFilters({ filters, onChange }) {
           </select>
         </div>
         <div>
-          <label className={formLabel}>Vendor name</label>
-          <input
+          <label htmlFor={`${fieldId}-vendor-name`} className={formLabel}>Vendor name</label>
+          <input id={`${fieldId}-vendor-name`}
             className={formInput}
             placeholder="Competitor / distributor"
             value={filters.vendor}
@@ -90,8 +92,8 @@ export default function CustomerFilters({ filters, onChange }) {
           />
         </div>
         <div>
-          <label className={formLabel}>Not ordered from</label>
-          <input
+          <label htmlFor={`${fieldId}-not-ordered-from`} className={formLabel}>Not ordered from</label>
+          <input id={`${fieldId}-not-ordered-from`}
             type="date"
             className={formInput}
             value={filters.not_ordered_from}
@@ -99,8 +101,8 @@ export default function CustomerFilters({ filters, onChange }) {
           />
         </div>
         <div>
-          <label className={formLabel}>Not ordered to</label>
-          <input
+          <label htmlFor={`${fieldId}-not-ordered-to`} className={formLabel}>Not ordered to</label>
+          <input id={`${fieldId}-not-ordered-to`}
             type="date"
             className={formInput}
             value={filters.not_ordered_to}

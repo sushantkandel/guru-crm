@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,7 @@ import {
 const emptyForm = { name: '', productCode: '', defaultUnit: 'packet', defaultPrice: 0, isActive: true };
 
 export default function Products() {
+  const fieldId = useId();
   const { canEdit, canDelete, canRequestDelete } = useAuth();
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -199,24 +200,24 @@ export default function Products() {
             {error && !editProduct && <div className={formAlertError}>{error}</div>}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className={formLabel}>Product Name *</label>
-                <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                <label htmlFor={`${fieldId}-product-name`} className={formLabel}>Product Name *</label>
+                <input id={`${fieldId}-product-name`} className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </div>
               <div>
-                <label className={formLabel}>Product Code (optional)</label>
-                <input className={inputClass} placeholder="Internal product code" value={form.productCode} onChange={(e) => setForm({ ...form, productCode: e.target.value })} />
+                <label htmlFor={`${fieldId}-product-code-optional`} className={formLabel}>Product Code (optional)</label>
+                <input id={`${fieldId}-product-code-optional`} className={inputClass} placeholder="Internal product code" value={form.productCode} onChange={(e) => setForm({ ...form, productCode: e.target.value })} />
               </div>
               <div>
-                <label className={formLabel}>Default Unit *</label>
-                <select className={inputClass} value={form.defaultUnit} onChange={(e) => setForm({ ...form, defaultUnit: e.target.value })}>
+                <label htmlFor={`${fieldId}-default-unit`} className={formLabel}>Default Unit *</label>
+                <select id={`${fieldId}-default-unit`} className={inputClass} value={form.defaultUnit} onChange={(e) => setForm({ ...form, defaultUnit: e.target.value })}>
                   <option value="packet">Packet</option>
                   <option value="bundle">Bundle</option>
                   <option value="bag">Bag</option>
                 </select>
               </div>
               <div>
-                <label className={formLabel}>Default Price *</label>
-                <input className={inputClass} type="number" min="0" step="0.01" value={form.defaultPrice} onChange={(e) => setForm({ ...form, defaultPrice: e.target.value })} required />
+                <label htmlFor={`${fieldId}-default-price`} className={formLabel}>Default Price *</label>
+                <input id={`${fieldId}-default-price`} className={inputClass} type="number" min="0" step="0.01" value={form.defaultPrice} onChange={(e) => setForm({ ...form, defaultPrice: e.target.value })} required />
               </div>
               <button type="submit" disabled={loading} className={formBtnPrimary}>
                 {loading ? 'Creating...' : 'Add Product'}
@@ -233,12 +234,12 @@ export default function Products() {
             {error && <div className={formAlertError}>{error}</div>}
             <form onSubmit={handleEdit} className="space-y-4">
               <div>
-                <label className={formLabel}>Product Name *</label>
-                <input className={inputClass} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+                <label htmlFor={`${fieldId}-product-name-2`} className={formLabel}>Product Name *</label>
+                <input id={`${fieldId}-product-name-2`} className={inputClass} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
               </div>
               <div>
-                <label className={formLabel}>Product Code (optional)</label>
-                <input className={inputClass} value={editForm.productCode} onChange={(e) => setEditForm({ ...editForm, productCode: e.target.value })} />
+                <label htmlFor={`${fieldId}-product-code-optional-2`} className={formLabel}>Product Code (optional)</label>
+                <input id={`${fieldId}-product-code-optional-2`} className={inputClass} value={editForm.productCode} onChange={(e) => setEditForm({ ...editForm, productCode: e.target.value })} />
               </div>
               <select className={inputClass} value={editForm.defaultUnit} onChange={(e) => setEditForm({ ...editForm, defaultUnit: e.target.value })}>
                 <option value="packet">Packet</option>

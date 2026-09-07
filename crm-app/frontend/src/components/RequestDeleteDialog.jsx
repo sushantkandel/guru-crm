@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import api from '../services/api';
 import {
   modalOverlay,
@@ -20,6 +20,7 @@ export default function RequestDeleteDialog({
   onSuccess,
   onCancel,
 }) {
+  const fieldId = useId();
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,8 +56,8 @@ export default function RequestDeleteDialog({
         {error && <div className={`${formAlertError} mt-4`}>{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div>
-            <label className={formLabel}>Reason (optional)</label>
-            <textarea
+            <label htmlFor={`${fieldId}-reason-optional`} className={formLabel}>Reason (optional)</label>
+            <textarea id={`${fieldId}-reason-optional`}
               className={`${formInput} min-h-[88px] resize-y`}
               rows={3}
               value={reason}

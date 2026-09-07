@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useId } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import EditAudit from '../components/EditAudit';
@@ -20,6 +20,7 @@ import {
 const emptyBalance = { totalOrders: 0, totalPaid: 0, remaining: 0, pendingSettlement: 0 };
 
 export default function PaymentForm() {
+  const fieldId = useId();
   const { id } = useParams();
   const isEdit = Boolean(id);
   const [searchParams] = useSearchParams();
@@ -97,8 +98,16 @@ export default function PaymentForm() {
   }, [form.paymentType, form.status, isEdit]);
 
   const amountNum = Number(form.amount) || 0;
+
+  // When editing an already-completed payment its amount is baked into the balance the
+  // API returned, so add it back before capping — otherwise re-saving the same payment
+  // is blocked by the `max` on the amount field even though the server would accept it.
+  const editedCompletedAmount =
+    isEdit && auditRecord?.status === 'completed' ? Number(auditRecord.amount) || 0 : 0;
+  const availableRemaining = customerBalance.remaining + editedCompletedAmount;
+
   const remainingAfterPayment = effectiveStatus === 'completed'
-    ? Math.max(0, customerBalance.remaining - amountNum)
+    ? Math.max(0, availableRemaining - amountNum)
     : customerBalance.remaining;
 
   const handleSubmit = async (e) => {
@@ -131,7 +140,7 @@ export default function PaymentForm() {
   };
 
   const fillRemaining = () => {
-    const target = orderBalance?.remainingOnOrder ?? customerBalance.remaining;
+    const target = orderBalance?.remainingOnOrder ?? availableRemaining;
     if (target > 0) {
       setForm((prev) => ({ ...prev, amount: String(target) }));
     }
@@ -145,8 +154,8 @@ export default function PaymentForm() {
 
       <form onSubmit={handleSubmit} className={formCard}>
         <div>
-          <label className={formLabel}>Customer *</label>
-          <select
+          <label htmlFor={`${fieldId}-customer`} className={formLabel}>Customer *</label>
+          <select id={`${fieldId}-customer`}
             className={formInput}
             value={form.customerId}
             onChange={(e) => setForm({ ...form, customerId: e.target.value, orderId: '' })}
@@ -174,8 +183,8 @@ export default function PaymentForm() {
         )}
 
         <div>
-          <label className={formLabel}>Link to Order (optional)</label>
-          <select
+          <label htmlFor={`${fieldId}-link-to-order-optional`} className={formLabel}>Link to Order (optional)</label>
+          <select id={`${fieldId}-link-to-order-optional`}
             className={formInput}
             value={form.orderId}
             onChange={(e) => setForm({ ...form, orderId: e.target.value })}
@@ -195,8 +204,8 @@ export default function PaymentForm() {
         </div>
 
         <div>
-          <label className={formLabel}>Payment Type *</label>
-          <select
+          <label htmlFor={`${fieldId}-payment-type`} className={formLabel}>Payment Type *</label>
+          <select id={`${fieldId}-payment-type`}
             className={formInput}
             value={form.paymentType}
             onChange={(e) => setForm({ ...form, paymentType: e.target.value })}
@@ -210,18 +219,18 @@ export default function PaymentForm() {
 
         <div className={formGrid2}>
           <div>
-            <label className={formLabel}>Amount (Rs) *</label>
-            <input
+            <label htmlFor={`${fieldId}-amount-rs`} className={formLabel}>Amount (Rs) *</label>
+            <input id={`${fieldId}-amount-rs`}
               type="number"
               min="0.01"
               step="0.01"
-              max={effectiveStatus === 'completed' ? customerBalance.remaining || undefined : undefined}
+              max={effectiveStatus === 'completed' ? availableRemaining || undefined : undefined}
               className={formInput}
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
               required
             />
-            {form.customerId && customerBalance.remaining > 0 && (
+            {form.customerId && availableRemaining > 0 && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={fillRemaining} className="text-sm text-blue-600 hover:underline">
                   Pay full remaining
@@ -235,8 +244,8 @@ export default function PaymentForm() {
             )}
           </div>
           <div>
-            <label className={formLabel}>Payment Date *</label>
-            <input
+            <label htmlFor={`${fieldId}-payment-date`} className={formLabel}>Payment Date *</label>
+            <input id={`${fieldId}-payment-date`}
               type="date"
               className={formInput}
               value={form.paymentDate}
@@ -248,8 +257,8 @@ export default function PaymentForm() {
 
         {isEdit && (
           <div>
-            <label className={formLabel}>Status</label>
-            <select
+            <label htmlFor={`${fieldId}-status`} className={formLabel}>Status</label>
+            <select id={`${fieldId}-status`}
               className={formInput}
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -264,12 +273,12 @@ export default function PaymentForm() {
         {form.paymentType === 'cheque' && (
           <div className={formGrid2}>
             <div>
-              <label className={formLabel}>Cheque Number</label>
-              <input className={formInput} value={form.chequeNumber} onChange={(e) => setForm({ ...form, chequeNumber: e.target.value })} />
+              <label htmlFor={`${fieldId}-cheque-number`} className={formLabel}>Cheque Number</label>
+              <input id={`${fieldId}-cheque-number`} className={formInput} value={form.chequeNumber} onChange={(e) => setForm({ ...form, chequeNumber: e.target.value })} />
             </div>
             <div>
-              <label className={formLabel}>Bank Name</label>
-              <input className={formInput} value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} />
+              <label htmlFor={`${fieldId}-bank-name`} className={formLabel}>Bank Name</label>
+              <input id={`${fieldId}-bank-name`} className={formInput} value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} />
             </div>
             {!isEdit && (
               <p className={`${formHint} lg:col-span-2`}>Cheque payments are saved as pending until marked completed.</p>
@@ -280,12 +289,12 @@ export default function PaymentForm() {
         {form.paymentType === 'qr' && (
           <div className={formGrid2}>
             <div>
-              <label className={formLabel}>QR Reference / Txn ID</label>
-              <input className={formInput} value={form.qrReference} onChange={(e) => setForm({ ...form, qrReference: e.target.value })} />
+              <label htmlFor={`${fieldId}-qr-reference-txn-id`} className={formLabel}>QR Reference / Txn ID</label>
+              <input id={`${fieldId}-qr-reference-txn-id`} className={formInput} value={form.qrReference} onChange={(e) => setForm({ ...form, qrReference: e.target.value })} />
             </div>
             <div>
-              <label className={formLabel}>Provider</label>
-              <select className={formInput} value={form.qrProvider} onChange={(e) => setForm({ ...form, qrProvider: e.target.value })}>
+              <label htmlFor={`${fieldId}-provider`} className={formLabel}>Provider</label>
+              <select id={`${fieldId}-provider`} className={formInput} value={form.qrProvider} onChange={(e) => setForm({ ...form, qrProvider: e.target.value })}>
                 <option value="">Select</option>
                 <option value="esewa">eSewa</option>
                 <option value="khalti">Khalti</option>
@@ -298,8 +307,8 @@ export default function PaymentForm() {
 
         {form.paymentType === 'credit' && (
           <div>
-            <label className={formLabel}>Credit Due Date</label>
-            <input
+            <label htmlFor={`${fieldId}-credit-due-date`} className={formLabel}>Credit Due Date</label>
+            <input id={`${fieldId}-credit-due-date`}
               type="date"
               className={formInput}
               value={form.creditDueDate}

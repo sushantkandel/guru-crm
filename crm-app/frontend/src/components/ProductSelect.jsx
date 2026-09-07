@@ -1,6 +1,6 @@
 import { useActiveProducts } from '../hooks/useActiveProducts';
 
-export default function ProductSelect({ value, onChange, className = '' }) {
+export default function ProductSelect({ value, onChange, className = '', id }) {
   const { products } = useActiveProducts();
 
   const handleSelect = (productId) => {
@@ -19,6 +19,7 @@ export default function ProductSelect({ value, onChange, className = '' }) {
 
   return (
     <select
+      id={id}
       className={className}
       value={value?.productId || ''}
       onChange={(e) => handleSelect(e.target.value)}

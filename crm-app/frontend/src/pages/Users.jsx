@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -23,6 +23,7 @@ import {
 } from '../utils/formStyles';
 
 export default function Users() {
+  const fieldId = useId();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff' });
@@ -133,20 +134,20 @@ export default function Users() {
           {error && !editUser && <div className={formAlertError}>{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className={formLabel}>Name</label>
-              <input className={formInput} placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <label htmlFor={`${fieldId}-name`} className={formLabel}>Name</label>
+              <input id={`${fieldId}-name`} className={formInput} placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div>
-              <label className={formLabel}>Email</label>
-              <input className={formInput} type="email" placeholder="email@company.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              <label htmlFor={`${fieldId}-email`} className={formLabel}>Email</label>
+              <input id={`${fieldId}-email`} className={formInput} type="email" placeholder="email@company.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
             </div>
             <div>
-              <label className={formLabel}>Password</label>
-              <PasswordInput placeholder="Min 6 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
+              <label htmlFor={`${fieldId}-password`} className={formLabel}>Password</label>
+              <PasswordInput id={`${fieldId}-password`} placeholder="Min 6 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
             </div>
             <div>
-              <label className={formLabel}>Role</label>
-              <select className={formInput} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+              <label htmlFor={`${fieldId}-role`} className={formLabel}>Role</label>
+              <select id={`${fieldId}-role`} className={formInput} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                 <option value="staff">Staff — create & edit (no direct delete)</option>
                 <option value="viewer">Viewer — read-only</option>
               </select>
@@ -165,25 +166,25 @@ export default function Users() {
             {error && <div className={formAlertError}>{error}</div>}
             <form onSubmit={handleEdit} className="space-y-4 mt-4">
               <div>
-                <label className={formLabel}>Name</label>
-                <input className={formInput} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+                <label htmlFor={`${fieldId}-name-2`} className={formLabel}>Name</label>
+                <input id={`${fieldId}-name-2`} className={formInput} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
               </div>
               <div>
-                <label className={formLabel}>Email</label>
-                <input className={formInput} type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} required />
+                <label htmlFor={`${fieldId}-email-2`} className={formLabel}>Email</label>
+                <input id={`${fieldId}-email-2`} className={formInput} type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} required />
               </div>
               {editUser.role !== 'owner' && (
                 <div>
-                  <label className={formLabel}>Role</label>
-                  <select className={formInput} value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
+                  <label htmlFor={`${fieldId}-role-2`} className={formLabel}>Role</label>
+                  <select id={`${fieldId}-role-2`} className={formInput} value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
                     <option value="staff">Staff — create & edit</option>
                     <option value="viewer">Viewer — read-only</option>
                   </select>
                 </div>
               )}
               <div>
-                <label className={formLabel}>New password</label>
-                <PasswordInput placeholder="Leave blank to keep current" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} minLength={6} />
+                <label htmlFor={`${fieldId}-new-password`} className={formLabel}>New password</label>
+                <PasswordInput id={`${fieldId}-new-password`} placeholder="Leave blank to keep current" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} minLength={6} />
               </div>
               <div className={formActions}>
                 <button type="submit" disabled={loading} className={formBtnPrimary}>

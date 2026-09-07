@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +23,7 @@ import {
 } from '../utils/formStyles';
 
 export default function CustomerForm() {
+  const fieldId = useId();
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
@@ -150,24 +151,24 @@ export default function CustomerForm() {
       <form onSubmit={handleSubmit} className={formCard}>
         <div className={formGrid2}>
           <div>
-            <label className={formLabel}>Contact Name *</label>
-            <input className={formInput} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <label htmlFor={`${fieldId}-contact-name`} className={formLabel}>Contact Name *</label>
+            <input id={`${fieldId}-contact-name`} className={formInput} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </div>
           <div>
-            <label className={formLabel}>Company / Shop Name *</label>
-            <input className={formInput} value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
+            <label htmlFor={`${fieldId}-company-shop-name`} className={formLabel}>Company / Shop Name *</label>
+            <input id={`${fieldId}-company-shop-name`} className={formInput} value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
           </div>
           <div>
-            <label className={formLabel}>Phone *</label>
-            <input className={formInput} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
+            <label htmlFor={`${fieldId}-phone`} className={formLabel}>Phone *</label>
+            <input id={`${fieldId}-phone`} className={formInput} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
           </div>
           <div>
-            <label className={formLabel}>Email</label>
-            <input type="email" className={formInput} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <label htmlFor={`${fieldId}-email`} className={formLabel}>Email</label>
+            <input id={`${fieldId}-email`} type="email" className={formInput} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <div className="sm:col-span-2">
-            <label className={formLabel}>PAN / VAT Number</label>
-            <input
+            <label htmlFor={`${fieldId}-pan-vat-number`} className={formLabel}>PAN / VAT Number</label>
+            <input id={`${fieldId}-pan-vat-number`}
               className={formInput}
               value={form.panVatNumber}
               onChange={(e) => setForm({ ...form, panVatNumber: e.target.value })}
@@ -177,8 +178,8 @@ export default function CustomerForm() {
         </div>
 
         <div>
-          <label className={formLabel}>Conversion Status *</label>
-          <select
+          <label htmlFor={`${fieldId}-conversion-status`} className={formLabel}>Conversion Status *</label>
+          <select id={`${fieldId}-conversion-status`}
             className={formInput}
             value={form.businessStatus}
             onChange={(e) => setForm({ ...form, businessStatus: e.target.value })}
@@ -223,8 +224,8 @@ export default function CustomerForm() {
 
         {isOwner && (
           <div>
-            <label className={formLabel}>Assigned Staff</label>
-            <select
+            <label htmlFor={`${fieldId}-assigned-staff`} className={formLabel}>Assigned Staff</label>
+            <select id={`${fieldId}-assigned-staff`}
               className={formInput}
               value={form.assignedTo}
               onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
@@ -254,6 +255,8 @@ export default function CustomerForm() {
             className="mb-3"
           />
           <input
+            id={`${fieldId}-street`}
+            aria-label="Street or tole name"
             className={formInput}
             placeholder="Street / tole name (optional)"
             value={form.address.street}

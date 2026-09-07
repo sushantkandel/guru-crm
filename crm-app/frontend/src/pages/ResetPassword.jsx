@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import PasswordInput from '../components/PasswordInput';
@@ -13,6 +13,7 @@ import {
 } from '../utils/formStyles';
 
 export default function ResetPassword() {
+  const fieldId = useId();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token') || '';
@@ -56,8 +57,8 @@ export default function ResetPassword() {
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className={formLabel}>New Password</label>
-            <PasswordInput
+            <label htmlFor={`${fieldId}-new-password`} className={formLabel}>New Password</label>
+            <PasswordInput id={`${fieldId}-new-password`}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -65,8 +66,8 @@ export default function ResetPassword() {
             />
           </div>
           <div>
-            <label className={formLabel}>Confirm Password</label>
-            <PasswordInput
+            <label htmlFor={`${fieldId}-confirm-password`} className={formLabel}>Confirm Password</label>
+            <PasswordInput id={`${fieldId}-confirm-password`}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required

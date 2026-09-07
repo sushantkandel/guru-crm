@@ -22,6 +22,7 @@ import {
   badgeGreen,
   badgeSlate,
   emptyState,
+  loadingState,
   formInput,
 } from '../utils/formStyles';
 
@@ -37,21 +38,27 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [outstandingCustomerIds, setOutstandingCustomerIds] = useState(() => new Set());
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+  const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [requestDeleteTarget, setRequestDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const { canEdit, canDelete, canRequestDelete, isOwner } = useAuth();
 
+  // `loading` starts true and is only ever cleared, so the first paint shows a spinner
+  // instead of briefly claiming "No orders found", while later refreshes (status change,
+  // delete) keep the current table on screen.
   const load = () => {
     const params = {};
     if (statusFilter) params.status = statusFilter;
     Promise.all([
       api.get('/orders', { params }),
       api.get('/payments/outstanding'),
-    ]).then(([ordersRes, outstandingRes]) => {
-      setOrders(ordersRes.data);
-      setOutstandingCustomerIds(new Set(outstandingRes.data.map((c) => c.id)));
-    });
+    ])
+      .then(([ordersRes, outstandingRes]) => {
+        setOrders(ordersRes.data);
+        setOutstandingCustomerIds(new Set(outstandingRes.data.map((c) => c.id)));
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [statusFilter]);
@@ -108,7 +115,9 @@ export default function Orders() {
       </div>
 
       <div className={`${pageCard} overflow-hidden`}>
-        {orders.length === 0 ? (
+        {loading ? (
+          <div className={loadingState}>Loading…</div>
+        ) : orders.length === 0 ? (
           <div className={emptyState}>No orders found</div>
         ) : (
           <div className={dataTableWrap}>
