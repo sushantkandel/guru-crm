@@ -18,17 +18,30 @@ const router = express.Router();
 
 const emptyToNull = (value) => (value === '' || value === undefined ? null : value);
 
-const customerSchema = z.object({
+const customerFields = {
   name: z.string().min(1),
   phone: z.string().min(1),
   email: z.preprocess(emptyToNull, z.string().email().optional().nullable()),
   shopName: z.string().min(1),
   panVatNumber: z.preprocess(emptyToNull, z.string().optional().nullable()),
-  businessStatus: z.enum(['converted', 'not_converted', 'just_visited']).default('just_visited'),
-  customerTypes: z.array(customerTypeSchema).default([]),
+  businessStatus: z.enum(['converted', 'not_converted', 'just_visited']),
+  customerTypes: z.array(customerTypeSchema),
   assignedTo: z.preprocess(emptyToNull, z.string().uuid().optional().nullable()),
+};
+
+const customerSchema = z.object({
+  ...customerFields,
+  businessStatus: customerFields.businessStatus.default('just_visited'),
+  customerTypes: customerFields.customerTypes.default([]),
   address: shopAddressSchema,
 });
+
+// Update is a true patch: fields the client omits must stay untouched. Defaults are
+// deliberately absent here — under `.partial()` Zod still applies them, which would
+// silently reset businessStatus/customerTypes on every partial edit.
+const customerUpdateSchema = z
+  .object({ ...customerFields, address: shopAddressSchema.partial() })
+  .partial();
 
 router.use(authMiddleware, tenantMiddleware);
 
@@ -220,7 +233,7 @@ router.put('/:id', roleGuard('owner', 'staff'), async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const data = customerSchema.partial().parse(req.body);
+    const data = customerUpdateSchema.parse(req.body);
 
     await prisma.customer.update({
       where: { id: req.params.id },

@@ -43,21 +43,24 @@ function buildCustomerWhere(query, user, companyId) {
   }
 
   if (q) {
+    // PostgreSQL `contains` is case-sensitive unless mode is set — without this,
+    // searching "ram" would not match "Ram Traders".
+    const like = { contains: q, mode: 'insensitive' };
     where.AND.push({
       OR: [
-        { name: { contains: q } },
+        { name: like },
         { phone: { contains: q } },
-        { shopName: { contains: q } },
-        { email: { contains: q } },
-        { panVatNumber: { contains: q } },
+        { shopName: like },
+        { email: like },
+        { panVatNumber: like },
         {
           addresses: {
             some: {
               OR: [
-                { province: { contains: q } },
-                { district: { contains: q } },
-                { municipality: { contains: q } },
-                { street: { contains: q } },
+                { province: like },
+                { district: like },
+                { municipality: like },
+                { street: like },
               ],
             },
           },

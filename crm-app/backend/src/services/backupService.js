@@ -362,12 +362,19 @@ async function exportCompanyBackupBuffer(companyId) {
 }
 
 function parseBackupZip(buffer) {
-  const zip = new AdmZip(buffer);
-  const entries = zip.getEntries();
+  // Picking the wrong file in the Backup & Restore screen is an ordinary user mistake,
+  // so surface it as a 400 instead of letting the raw ADM-ZIP error escape as a 500.
   const files = {};
-  for (const entry of entries) {
-    if (entry.isDirectory) continue;
-    files[entry.entryName.replace(/^\/+/, '')] = zip.readAsText(entry, 'utf8');
+  try {
+    const zip = new AdmZip(buffer);
+    for (const entry of zip.getEntries()) {
+      if (entry.isDirectory) continue;
+      files[entry.entryName.replace(/^\/+/, '')] = zip.readAsText(entry, 'utf8');
+    }
+  } catch {
+    const err = new Error('That file is not a valid backup ZIP. Choose the .zip file exported from Sales Guru.');
+    err.status = 400;
+    throw err;
   }
 
   if (!files['manifest.json']) {

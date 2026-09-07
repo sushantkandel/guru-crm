@@ -3,7 +3,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authMiddleware, roleGuard } = require('../middleware/auth');
 const { tenantMiddleware } = require('../middleware/tenant');
-const { executeEntityDelete } = require('../services/deleteService');
+const { executeEntityDelete, findDeletableEntity } = require('../services/deleteService');
 
 const router = express.Router();
 
@@ -56,9 +56,10 @@ router.post('/', roleGuard('owner', 'staff'), async (req, res, next) => {
       return res.status(409).json({ error: 'A pending delete request already exists for this item' });
     }
 
-    const deleteResult = await executeEntityDelete(req.companyId, data.entityType, data.entityId);
-    if (deleteResult.error && deleteResult.status === 404) {
-      return res.status(404).json({ error: deleteResult.error });
+    // Only check the record exists — it must survive until an owner approves.
+    const lookup = await findDeletableEntity(req.companyId, data.entityType, data.entityId);
+    if (lookup.error) {
+      return res.status(lookup.status).json({ error: lookup.error });
     }
 
     const request = await prisma.deleteRequest.create({

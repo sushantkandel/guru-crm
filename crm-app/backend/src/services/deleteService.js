@@ -1,5 +1,29 @@
 const prisma = require('../config/prisma');
 
+const ENTITY_MODELS = {
+  customer: { model: 'customer', label: 'Customer' },
+  order: { model: 'order', label: 'Order' },
+  payment: { model: 'payment', label: 'Payment' },
+  product: { model: 'product', label: 'Product' },
+};
+
+/**
+ * Non-destructive existence check used when a delete *request* is raised.
+ * The record is only removed later, if and when an owner approves the request.
+ */
+async function findDeletableEntity(companyId, entityType, entityId) {
+  const entity = ENTITY_MODELS[entityType];
+  if (!entity) return { error: 'Invalid entity type', status: 400 };
+
+  const record = await prisma[entity.model].findFirst({
+    where: { id: entityId, companyId },
+    select: { id: true },
+  });
+  if (!record) return { error: `${entity.label} not found`, status: 404 };
+
+  return { record };
+}
+
 async function executeEntityDelete(companyId, entityType, entityId) {
   switch (entityType) {
     case 'customer': {
@@ -49,4 +73,4 @@ async function executeEntityDelete(companyId, entityType, entityId) {
   }
 }
 
-module.exports = { executeEntityDelete };
+module.exports = { executeEntityDelete, findDeletableEntity };

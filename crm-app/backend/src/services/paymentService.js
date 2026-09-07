@@ -42,11 +42,11 @@ function buildCustomerFilter(query, user) {
   }
 
   if (shop_name) {
-    AND.push({ shopName: { contains: shop_name } });
+    AND.push({ shopName: { contains: shop_name, mode: 'insensitive' } });
   }
 
   if (customer_name) {
-    AND.push({ name: { contains: customer_name } });
+    AND.push({ name: { contains: customer_name, mode: 'insensitive' } });
   }
 
   if (phone) {
