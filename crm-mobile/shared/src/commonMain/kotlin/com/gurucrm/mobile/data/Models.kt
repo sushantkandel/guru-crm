@@ -210,7 +210,9 @@ data class ProductUpsertRequest(
     val productCode: String? = null,
     val defaultUnit: String,
     val defaultPrice: Double,
-    val isActive: Boolean = true,
+    // No default: the client Json uses encodeDefaults = false, so a defaulted `true`
+    // would be dropped from the body and the server would never reactivate the product.
+    val isActive: Boolean,
 )
 
 @Serializable
@@ -246,7 +248,8 @@ data class PaymentUpsertRequest(
     val paymentType: String,
     val amount: Double,
     val paymentDate: String,
-    val status: String = "completed",
+    // No default — see ProductUpsertRequest.isActive.
+    val status: String,
     val chequeNumber: String? = null,
     val bankName: String? = null,
     val qrReference: String? = null,
@@ -318,8 +321,11 @@ data class CustomerUpsertRequest(
     val email: String? = null,
     val shopName: String,
     val panVatNumber: String? = null,
-    val businessStatus: String = "just_visited",
-    val customerTypes: List<String> = emptyList(),
+    // Null (and therefore omitted) leaves the server-side conversion status untouched.
+    // The mobile form has no conversion-status field, so it must never overwrite it.
+    val businessStatus: String? = null,
+    // No default, so clearing every shop type actually sends `[]` instead of dropping the field.
+    val customerTypes: List<String>,
     val assignedTo: String? = null,
     val address: CustomerAddressInput,
 )

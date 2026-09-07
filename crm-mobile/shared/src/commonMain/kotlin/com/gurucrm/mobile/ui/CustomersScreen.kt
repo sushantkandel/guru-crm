@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -159,7 +160,9 @@ fun CustomersScreen(
                 loading -> LoadingScreen()
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 customers.isEmpty() -> EmptyState("No customers found")
-                else -> LazyColumn {
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(bottom = GuruSpacing.fabListInset),
+                ) {
                     items(customers, key = { it.id }) { customer ->
                         GuruCard(onClick = { onCustomerClick(customer.id) }) {
                             Text(customer.name, style = MaterialTheme.typography.titleSmall)

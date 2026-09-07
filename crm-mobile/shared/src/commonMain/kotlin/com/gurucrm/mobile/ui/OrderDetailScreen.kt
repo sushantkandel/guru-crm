@@ -35,6 +35,10 @@ import com.gurucrm.mobile.util.canDelete
 import com.gurucrm.mobile.util.canEdit
 import kotlinx.coroutines.launch
 
+/** Quantities can be fractional (e.g. 2.5 bags), so they must not be truncated to whole units. */
+private fun formatQuantity(value: Double): String =
+    if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
+
 @Composable
 fun OrderDetailScreen(
     api: GuruApi,
@@ -50,6 +54,7 @@ fun OrderDetailScreen(
     var customerRemaining by remember { mutableStateOf(0.0) }
     var showDelete by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
+    var actionError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     fun reload() {
@@ -65,6 +70,20 @@ fun OrderDetailScreen(
                 error = e.message
             } finally {
                 loading = false
+            }
+        }
+    }
+
+    // The server rejects some transitions (e.g. delivering an order that still has a
+    // balance). Without this guard the exception escapes the coroutine and kills the app.
+    fun changeStatus(status: String) {
+        scope.launch {
+            actionError = null
+            try {
+                api.updateOrderStatus(orderId, status)
+                reload()
+            } catch (e: Exception) {
+                actionError = e.message ?: "Could not update the order"
             }
         }
     }
@@ -106,30 +125,25 @@ fun OrderDetailScreen(
                 GuruSectionTitle("Items")
                 o.items.forEach { item ->
                     Text(
-                        "${item.productName} · ${item.quantity.toLong()} ${item.unit} @ Rs ${item.unitPrice.toLong()}",
+                        "${item.productName} · ${formatQuantity(item.quantity)} ${item.unit} @ Rs ${item.unitPrice.toLong()}",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(vertical = GuruSpacing.listItemVertical),
                     )
                 }
 
                 if (user.canEdit()) {
+                    actionError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
                     GuruButtonRow(modifier = Modifier.padding(top = GuruSpacing.sm)) {
                         when (o.status) {
                             "pending" -> {
-                                GuruPrimaryButton(text = "Confirm", onClick = {
-                                    scope.launch { api.updateOrderStatus(orderId, "confirmed"); reload() }
-                                })
-                                GuruOutlinedButton(text = "Cancel", onClick = {
-                                    scope.launch { api.updateOrderStatus(orderId, "cancelled"); reload() }
-                                })
+                                GuruPrimaryButton(text = "Confirm", onClick = { changeStatus("confirmed") })
+                                GuruOutlinedButton(text = "Cancel", onClick = { changeStatus("cancelled") })
                             }
                             "confirmed" -> {
-                                GuruPrimaryButton(text = "Deliver", onClick = {
-                                    scope.launch { api.updateOrderStatus(orderId, "delivered"); reload() }
-                                })
-                                GuruOutlinedButton(text = "Cancel", onClick = {
-                                    scope.launch { api.updateOrderStatus(orderId, "cancelled"); reload() }
-                                })
+                                GuruPrimaryButton(text = "Deliver", onClick = { changeStatus("delivered") })
+                                GuruOutlinedButton(text = "Cancel", onClick = { changeStatus("cancelled") })
                             }
                         }
                     }

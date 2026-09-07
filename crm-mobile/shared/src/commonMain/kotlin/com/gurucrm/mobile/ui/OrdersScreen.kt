@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -58,7 +59,22 @@ fun OrdersScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var orders by remember { mutableStateOf<List<OrderDto>>(emptyList()) }
     var refreshKey by remember { mutableStateOf(0) }
+    var actionError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    // The server rejects some transitions (e.g. delivering an order that still has a
+    // balance). Without this guard the exception escapes the coroutine and kills the app.
+    fun changeStatus(id: String, status: String) {
+        scope.launch {
+            actionError = null
+            try {
+                api.updateOrderStatus(id, status)
+                refreshKey++
+            } catch (e: Exception) {
+                actionError = e.message ?: "Could not update the order"
+            }
+        }
+    }
 
     LaunchedEffect(statusFilter, refreshKey, listRefreshKey) {
         loading = true
@@ -84,11 +100,14 @@ fun OrdersScreen(
         Column(Modifier.fillMaxSize().padding(padding)) {
             PageHeader(title = "Orders", subtitle = "Track order workflow", onRefresh = { refreshKey++ })
             FilterChipRow(options = statusFilters, selected = statusFilter, onSelect = { statusFilter = it })
+            actionError?.let { ErrorBanner(it, onRetry = { actionError = null }) }
             when {
                 loading -> LoadingScreen()
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 orders.isEmpty() -> EmptyState("No orders")
-                else -> LazyColumn {
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(bottom = GuruSpacing.fabListInset),
+                ) {
                     items(orders, key = { it.id }) { order ->
                         GuruCard(onClick = { onOrderClick(order.id) }) {
                             Text(order.customer?.shopName ?: "—", style = MaterialTheme.typography.titleSmall)
@@ -107,17 +126,21 @@ fun OrdersScreen(
                                         "pending" -> {
                                             GuruPrimaryButton(
                                                 text = "Confirm",
-                                                onClick = { scope.launch { api.updateOrderStatus(order.id, "confirmed"); refreshKey++ } },
+                                                onClick = { changeStatus(order.id, "confirmed") },
                                             )
                                             GuruOutlinedButton(
                                                 text = "Cancel",
-                                                onClick = { scope.launch { api.updateOrderStatus(order.id, "cancelled"); refreshKey++ } },
+                                                onClick = { changeStatus(order.id, "cancelled") },
                                             )
                                         }
                                         "confirmed" -> {
                                             GuruPrimaryButton(
                                                 text = "Deliver",
-                                                onClick = { scope.launch { api.updateOrderStatus(order.id, "delivered"); refreshKey++ } },
+                                                onClick = { changeStatus(order.id, "delivered") },
+                                            )
+                                            GuruOutlinedButton(
+                                                text = "Cancel",
+                                                onClick = { changeStatus(order.id, "cancelled") },
                                             )
                                         }
                                     }

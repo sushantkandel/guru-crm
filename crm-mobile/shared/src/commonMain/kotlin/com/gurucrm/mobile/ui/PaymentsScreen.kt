@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -61,6 +62,9 @@ fun PaymentsScreen(
     var pendingPayments by remember { mutableStateOf<List<PaymentDto>>(emptyList()) }
     var payments by remember { mutableStateOf<List<PaymentDto>>(emptyList()) }
     var refreshKey by remember { mutableStateOf(0) }
+    // Settling a payment can be refused by the server (it would exceed the remaining
+    // balance). Surfaced here instead of escaping the coroutine and crashing the app.
+    var actionError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val query = PaymentQuery(
         shopName = shopName.ifBlank { null },
@@ -117,13 +121,16 @@ fun PaymentsScreen(
                     GuruTextField(value = phone, onValueChange = { phone = it }, label = "Phone", modifier = Modifier.weight(1f))
                 }
             }
+            actionError?.let { ErrorBanner(it, onRetry = { actionError = null }) }
             when {
                 loading -> LoadingScreen()
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 tab == 0 && outstanding.isEmpty() -> EmptyState("No outstanding balances")
                 tab == 1 && pendingPayments.isEmpty() -> EmptyState("No pending credit or cheque payments")
                 tab == 2 && payments.isEmpty() -> EmptyState("No completed payments")
-                tab == 0 -> LazyColumn {
+                tab == 0 -> LazyColumn(
+                    contentPadding = PaddingValues(bottom = GuruSpacing.fabListInset),
+                ) {
                     items(outstanding, key = { it.id }) { row ->
                         GuruCard {
                             Text(row.shopName, style = MaterialTheme.typography.titleSmall)
@@ -148,7 +155,9 @@ fun PaymentsScreen(
                         }
                     }
                 }
-                tab == 1 -> LazyColumn {
+                tab == 1 -> LazyColumn(
+                    contentPadding = PaddingValues(bottom = GuruSpacing.fabListInset),
+                ) {
                     items(pendingPayments, key = { it.id }) { payment ->
                         GuruCard(onClick = { if (user.canEdit()) onEditPayment(payment.id) }) {
                             Text(payment.customer?.shopName ?: "—", style = MaterialTheme.typography.titleSmall)
@@ -166,8 +175,13 @@ fun PaymentsScreen(
                                     text = "Mark complete",
                                     onClick = {
                                         scope.launch {
-                                            api.updatePaymentStatus(payment.id, "completed")
-                                            refreshKey++
+                                            actionError = null
+                                            try {
+                                                api.updatePaymentStatus(payment.id, "completed")
+                                                refreshKey++
+                                            } catch (e: Exception) {
+                                                actionError = e.message ?: "Could not update the payment"
+                                            }
                                         }
                                     },
                                     modifier = Modifier.padding(top = GuruSpacing.sm),
@@ -176,7 +190,9 @@ fun PaymentsScreen(
                         }
                     }
                 }
-                else -> LazyColumn {
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(bottom = GuruSpacing.fabListInset),
+                ) {
                     items(payments, key = { it.id }) { payment ->
                         GuruCard(onClick = { if (user.canEdit()) onEditPayment(payment.id) }) {
                             Text(payment.customer?.shopName ?: "—", style = MaterialTheme.typography.titleSmall)

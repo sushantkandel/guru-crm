@@ -56,4 +56,17 @@ object GuruSpacing {
 
     /** List item vertical padding inside detail screens. */
     val listItemVertical = sm
+
+    /**
+     * Bottom inset for scrollable lists on screens with a floating action button.
+     * FAB (56dp) + its 16dp margin + 16dp breathing room, so the last row's actions
+     * are never trapped underneath it.
+     */
+    val fabListInset = 88.dp
+
+    /** Icon size inside the bottom navigation bar (Material 3 standard). */
+    val navIcon = lg
+
+    /** Height of the bottom navigation bar. */
+    val navBarHeight = 64.dp
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.ProductDto
 import com.gurucrm.mobile.data.UserDto
+import com.gurucrm.mobile.ui.components.ConfirmDialog
 import com.gurucrm.mobile.ui.components.EmptyState
 import com.gurucrm.mobile.ui.components.ErrorBanner
 import com.gurucrm.mobile.ui.components.GuruButtonRow
@@ -57,6 +59,11 @@ fun ProductsScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var products by remember { mutableStateOf<List<ProductDto>>(emptyList()) }
     var refreshKey by remember { mutableStateOf(0) }
+    // Deleting a product is irreversible, so it is confirmed like every other destructive
+    // action in the app. A failed delete is shown inline rather than replacing the list.
+    var deleteTarget by remember { mutableStateOf<ProductDto?>(null) }
+    var deleting by remember { mutableStateOf(false) }
+    var actionError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(refreshKey, listRefreshKey) {
@@ -86,11 +93,14 @@ fun ProductsScreen(
                 subtitle = "Catalog and default prices",
                 onRefresh = { refreshKey++ },
             )
+            actionError?.let { ErrorBanner(it, onRetry = { actionError = null }) }
             when {
                 loading -> LoadingScreen()
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 products.isEmpty() -> EmptyState("No products yet")
-                else -> LazyColumn {
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(bottom = GuruSpacing.fabListInset),
+                ) {
                     items(products, key = { it.id }) { product ->
                         GuruCard(onClick = { onEditProduct(product.id) }) {
                             Text(product.name, style = MaterialTheme.typography.titleSmall)
@@ -119,16 +129,7 @@ fun ProductsScreen(
                                 if (user.canDelete()) {
                                     GuruDangerButton(
                                         text = "Delete",
-                                        onClick = {
-                                            scope.launch {
-                                                try {
-                                                    api.deleteProduct(product.id)
-                                                    refreshKey++
-                                                } catch (e: Exception) {
-                                                    error = e.message
-                                                }
-                                            }
-                                        },
+                                        onClick = { deleteTarget = product },
                                     )
                                 }
                             }
@@ -137,5 +138,31 @@ fun ProductsScreen(
                 }
             }
         }
+    }
+
+    deleteTarget?.let { target ->
+        ConfirmDialog(
+            title = "Delete product?",
+            message = "\"${target.name}\" will be removed from the catalog. This cannot be undone.",
+            confirmLabel = "Delete",
+            loading = deleting,
+            onConfirm = {
+                deleting = true
+                actionError = null
+                scope.launch {
+                    try {
+                        api.deleteProduct(target.id)
+                        deleteTarget = null
+                        refreshKey++
+                    } catch (e: Exception) {
+                        actionError = e.message ?: "Could not delete the product"
+                        deleteTarget = null
+                    } finally {
+                        deleting = false
+                    }
+                }
+            },
+            onDismiss = { deleteTarget = null },
+        )
     }
 }

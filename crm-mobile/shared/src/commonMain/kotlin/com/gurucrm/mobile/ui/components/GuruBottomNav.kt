@@ -3,6 +3,7 @@ package com.gurucrm.mobile.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -21,7 +22,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.gurucrm.mobile.ui.theme.GuruSpacing
 
 data class GuruBottomNavItem(
     val route: String,
@@ -47,8 +48,8 @@ fun GuruBottomNav(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(66.dp)
-                .padding(horizontal = 4.dp, vertical = 6.dp),
+                .height(GuruSpacing.navBarHeight)
+                .padding(horizontal = GuruSpacing.xs, vertical = GuruSpacing.xs),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -63,30 +64,30 @@ fun GuruBottomNav(
                 Column(
                     modifier = Modifier
                         .weight(1f)
+                        .fillMaxHeight()
                         .selectable(
                             selected = selected,
                             onClick = { onSelect(item.route) },
                             role = Role.Tab,
                         )
-                        .padding(horizontal = 2.dp, vertical = 2.dp),
+                        .padding(horizontal = GuruSpacing.xs),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.label,
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(GuruSpacing.navIcon),
                         tint = tint,
                     )
                     Text(
                         text = item.label,
                         color = tint,
-                        fontSize = 10.sp,
-                        lineHeight = 12.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 3.dp),
+                        modifier = Modifier.padding(top = GuruSpacing.xs / 2),
                     )
                 }
             }

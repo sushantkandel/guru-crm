@@ -40,7 +40,13 @@ import com.gurucrm.mobile.util.canEdit
 import kotlinx.coroutines.launch
 
 private val paymentTypes = listOf("cash", "credit", "cheque", "qr")
-private val qrProviders = listOf("eSewa", "Khalti", "Fonepay", "other")
+// Values must match the web app's stored values, not just their display labels.
+private val qrProviders = listOf(
+    "esewa" to "eSewa",
+    "khalti" to "Khalti",
+    "fonepay" to "Fonepay",
+    "other" to "Other",
+)
 private val paymentStatuses = listOf("completed", "pending", "bounced")
 
 @Composable
@@ -260,8 +266,10 @@ fun PaymentFormScreen(
                             GuruTextField(value = qrReference, onValueChange = { qrReference = it }, label = "QR reference")
                             Text("Provider", style = MaterialTheme.typography.labelMedium)
                             FilterChipRow(
-                                options = qrProviders.map { it to it },
-                                selected = qrProvider.ifBlank { qrProviders.first() },
+                                options = qrProviders,
+                                // Reflect the real state — highlighting a provider that was
+                                // never selected meant the choice was silently dropped on save.
+                                selected = qrProvider,
                                 onSelect = { qrProvider = it },
                                 inset = false,
                             )

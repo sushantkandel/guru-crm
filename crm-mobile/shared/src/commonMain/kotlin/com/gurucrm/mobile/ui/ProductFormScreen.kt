@@ -69,7 +69,12 @@ fun ProductFormScreen(
             name = product.name
             productCode = product.productCode.orEmpty()
             defaultUnit = product.defaultUnit
-            defaultPrice = product.defaultPrice.toLong().toString()
+            // Keep the paisa part — truncating here rewrote the catalog price on every save.
+            defaultPrice = if (product.defaultPrice == product.defaultPrice.toLong().toDouble()) {
+                product.defaultPrice.toLong().toString()
+            } else {
+                product.defaultPrice.toString()
+            }
             isActive = product.isActive
         } catch (e: Exception) {
             error = e.message
@@ -112,7 +117,17 @@ fun ProductFormScreen(
                     }
                     GuruTextField(
                         value = defaultPrice,
-                        onValueChange = { defaultPrice = it.filter { ch -> ch.isDigit() } },
+                        onValueChange = { input ->
+                            // Digits plus at most one decimal point.
+                            var seenDot = false
+                            defaultPrice = input.filter { ch ->
+                                when {
+                                    ch.isDigit() -> true
+                                    ch == '.' && !seenDot -> { seenDot = true; true }
+                                    else -> false
+                                }
+                            }
+                        },
                         label = "Default price (Rs)",
                     )
                     if (isEdit) {
