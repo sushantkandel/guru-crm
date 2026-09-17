@@ -249,27 +249,10 @@ router.patch('/:id/status', roleGuard('owner', 'staff'), async (req, res, next) 
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    if (status === 'delivered') {
-      const orderPaid = await prisma.payment.aggregate({
-        where: { orderId: order.id, status: 'completed' },
-        _sum: { amount: true },
-      });
-      const paidOnOrder = Number(orderPaid._sum.amount || 0);
-      const orderRemaining = Number(order.totalAmount) - paidOnOrder;
-
-      // Linking a payment to an order is optional — "General payment" is the default in
-      // both clients — so an order-only check would permanently block delivery for a
-      // customer who has actually paid in full. Fall back to the customer-level balance,
-      // which is what the rest of the app treats as the source of truth.
-      if (orderRemaining > 0.001) {
-        const balance = await getCustomerBalance(order.customerId);
-        if (balance.remaining > 0.001) {
-          return res.status(400).json({
-            error: `Cannot deliver: Rs ${balance.remaining.toFixed(2)} still due from this customer`,
-          });
-        }
-      }
-    }
+    // Delivery is deliberately not gated on payment: goods go out and the rep either
+    // collects on the spot or leaves the balance on credit. Whatever is unpaid stays
+    // visible as the customer's outstanding balance (see balanceService) and on the
+    // Payments "Balance due" list until it is collected.
 
     const updated = await prisma.order.update({
       where: { id: req.params.id },
