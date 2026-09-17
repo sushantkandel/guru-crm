@@ -160,7 +160,19 @@ async function listCustomers(query, user, companyId) {
     orderBy: { updatedAt: 'desc' },
   });
 
-  const balances = await getCustomerBalances(customers.map((c) => c.id));
+  const customerIds = customers.map((c) => c.id);
+
+  // Balances and last-order dates are independent, so fetch them together. Running
+  // them in sequence cost an extra network round trip on every page load.
+  const [balances, lastOrders] = await Promise.all([
+    getCustomerBalances(customerIds),
+    prisma.order.groupBy({
+      by: ['customerId'],
+      where: { customerId: { in: customerIds }, status: { not: 'cancelled' }, companyId },
+      _max: { orderDate: true },
+    }),
+  ]);
+  const lastOrderMap = new Map(lastOrders.map((o) => [o.customerId, o._max.orderDate]));
 
   let result = customers.map((c) => {
     const balance = balances[c.id] || {
@@ -184,6 +196,7 @@ async function listCustomers(query, user, companyId) {
       pendingOrderCount: c.orders.length,
       orderCount: c._count.orders,
       balance,
+      lastOrderDate: lastOrderMap.get(c.id) || null,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
       creator: c.creator,
@@ -194,20 +207,6 @@ async function listCustomers(query, user, companyId) {
   if (hasRemainingPayment) {
     result = result.filter((c) => c.balance.remaining > 0);
   }
-
-  const ids = result.map((c) => c.id);
-  const lastOrders = await prisma.order.groupBy({
-    by: ['customerId'],
-    where: { customerId: { in: ids }, status: { not: 'cancelled' }, companyId },
-    _max: { orderDate: true },
-  });
-  const lastOrderMap = Object.fromEntries(
-    lastOrders.map((o) => [o.customerId, o._max.orderDate])
-  );
-  result = result.map((c) => ({
-    ...c,
-    lastOrderDate: lastOrderMap[c.id] || null,
-  }));
 
   return result;
 }
