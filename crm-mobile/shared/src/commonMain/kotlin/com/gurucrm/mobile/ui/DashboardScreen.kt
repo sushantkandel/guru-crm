@@ -26,8 +26,8 @@ import com.gurucrm.mobile.ui.components.ErrorBanner
 import com.gurucrm.mobile.ui.components.GuruCard
 import com.gurucrm.mobile.ui.components.GuruOutlinedButton
 import com.gurucrm.mobile.ui.components.GuruSectionTitle
-import com.gurucrm.mobile.ui.components.LoadingScreen
 import com.gurucrm.mobile.ui.components.PageHeader
+import com.gurucrm.mobile.ui.components.SkeletonStatGrid
 import com.gurucrm.mobile.ui.theme.GuruSpacing
 import com.gurucrm.mobile.util.canEdit
 
@@ -61,7 +61,7 @@ fun DashboardScreen(
     Column(Modifier.fillMaxSize()) {
         PageHeader(title = "Dashboard", subtitle = "Overview", onRefresh = { refreshKey++ })
         when {
-            loading -> LoadingScreen()
+            loading -> SkeletonStatGrid(rows = 2)
             error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
             stats != null -> {
                 val s = stats!!

@@ -31,9 +31,9 @@ import com.gurucrm.mobile.ui.components.GuruButtonRow
 import com.gurucrm.mobile.ui.components.GuruCard
 import com.gurucrm.mobile.ui.components.GuruDangerButton
 import com.gurucrm.mobile.ui.components.GuruOutlinedButton
-import com.gurucrm.mobile.ui.components.LoadingScreen
 import com.gurucrm.mobile.ui.components.PageHeader
 import com.gurucrm.mobile.ui.components.StatusBadge
+import com.gurucrm.mobile.ui.components.SkeletonList
 import com.gurucrm.mobile.ui.theme.GuruSpacing
 import com.gurucrm.mobile.util.canDelete
 import com.gurucrm.mobile.util.canManageProducts
@@ -95,7 +95,7 @@ fun ProductsScreen(
             )
             actionError?.let { ErrorBanner(it, onRetry = { actionError = null }) }
             when {
-                loading -> LoadingScreen()
+                loading -> SkeletonList(count = 6, lines = 3)
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 products.isEmpty() -> EmptyState("No products yet")
                 else -> LazyColumn(

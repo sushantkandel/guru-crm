@@ -34,9 +34,9 @@ import com.gurucrm.mobile.ui.components.FilterChipRow
 import com.gurucrm.mobile.ui.components.GuruCard
 import com.gurucrm.mobile.ui.components.GuruOutlinedButton
 import com.gurucrm.mobile.ui.components.GuruTextField
-import com.gurucrm.mobile.ui.components.LoadingScreen
 import com.gurucrm.mobile.ui.components.PageHeader
 import com.gurucrm.mobile.ui.components.StatusBadge
+import com.gurucrm.mobile.ui.components.SkeletonList
 import com.gurucrm.mobile.ui.theme.GuruSpacing
 import com.gurucrm.mobile.util.canEdit
 import kotlinx.coroutines.delay
@@ -157,7 +157,7 @@ fun CustomersScreen(
                 )
             }
             when {
-                loading -> LoadingScreen()
+                loading -> SkeletonList(count = 6, lines = 3)
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 customers.isEmpty() -> EmptyState("No customers found")
                 else -> LazyColumn(

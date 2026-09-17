@@ -41,6 +41,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -344,35 +345,82 @@ fun GuruPasswordField(
     }
 }
 
+/**
+ * Label for a button that may be working.
+ *
+ * A request over mobile data routinely takes a second or more, so a button that
+ * does not visibly react invites a second tap. While [busy] the button is
+ * disabled and shows a spinner in place of its leading edge.
+ */
 @Composable
-fun GuruPrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.heightIn(min = 48.dp),
-        enabled = enabled,
-        shape = RoundedCornerShape(8.dp),
-    ) { Text(text) }
+private fun ButtonLabel(text: String, busy: Boolean, busyText: String?) {
+    if (busy) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(GuruSpacing.sm),
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = LocalContentColor.current,
+            )
+            Text(busyText ?: text)
+        }
+    } else {
+        Text(text)
+    }
 }
 
 @Composable
-fun GuruOutlinedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun GuruPrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    busy: Boolean = false,
+    busyText: String? = null,
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 48.dp),
+        enabled = enabled && !busy,
+        shape = RoundedCornerShape(8.dp),
+    ) { ButtonLabel(text, busy, busyText) }
+}
+
+@Composable
+fun GuruOutlinedButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    busy: Boolean = false,
+    busyText: String? = null,
+) {
     OutlinedButton(
         onClick = onClick,
         modifier = modifier.heightIn(min = 48.dp),
-        enabled = enabled,
+        enabled = enabled && !busy,
         shape = RoundedCornerShape(8.dp),
-    ) { Text(text) }
+    ) { ButtonLabel(text, busy, busyText) }
 }
 
 @Composable
-fun GuruDangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun GuruDangerButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    busy: Boolean = false,
+    busyText: String? = null,
+) {
     Button(
         onClick = onClick,
         modifier = modifier.heightIn(min = 48.dp),
-        enabled = enabled,
+        enabled = enabled && !busy,
         colors = ButtonDefaults.buttonColors(containerColor = GuruRed),
         shape = RoundedCornerShape(8.dp),
-    ) { Text(text) }
+    ) { ButtonLabel(text, busy, busyText) }
 }
 
 @Composable

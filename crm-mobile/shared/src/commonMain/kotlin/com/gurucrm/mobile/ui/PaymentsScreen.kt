@@ -36,9 +36,9 @@ import com.gurucrm.mobile.ui.components.GuruFieldRow
 import com.gurucrm.mobile.ui.components.GuruOutlinedButton
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
 import com.gurucrm.mobile.ui.components.GuruTextField
-import com.gurucrm.mobile.ui.components.LoadingScreen
 import com.gurucrm.mobile.ui.components.PageHeader
 import com.gurucrm.mobile.ui.components.StatusBadge
+import com.gurucrm.mobile.ui.components.SkeletonList
 import com.gurucrm.mobile.ui.theme.GuruSpacing
 import com.gurucrm.mobile.util.canEdit
 import kotlinx.coroutines.delay
@@ -65,6 +65,7 @@ fun PaymentsScreen(
     // Settling a payment can be refused by the server (it would exceed the remaining
     // balance). Surfaced here instead of escaping the coroutine and crashing the app.
     var actionError by remember { mutableStateOf<String?>(null) }
+    var busyPaymentId by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val query = PaymentQuery(
         shopName = shopName.ifBlank { null },
@@ -123,7 +124,7 @@ fun PaymentsScreen(
             }
             actionError?.let { ErrorBanner(it, onRetry = { actionError = null }) }
             when {
-                loading -> LoadingScreen()
+                loading -> SkeletonList(count = 5, lines = 3)
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 tab == 0 && outstanding.isEmpty() -> EmptyState("No outstanding balances")
                 tab == 1 && pendingPayments.isEmpty() -> EmptyState("No pending credit or cheque payments")
@@ -173,14 +174,19 @@ fun PaymentsScreen(
                             if (user.canEdit()) {
                                 GuruOutlinedButton(
                                     text = "Mark complete",
+                                    busy = busyPaymentId == payment.id,
+                                    busyText = "Saving…",
                                     onClick = {
                                         scope.launch {
                                             actionError = null
+                                            busyPaymentId = payment.id
                                             try {
                                                 api.updatePaymentStatus(payment.id, "completed")
                                                 refreshKey++
                                             } catch (e: Exception) {
                                                 actionError = e.message ?: "Could not update the payment"
+                                            } finally {
+                                                busyPaymentId = null
                                             }
                                         }
                                     },

@@ -30,10 +30,10 @@ import com.gurucrm.mobile.ui.components.FilterChipRow
 import com.gurucrm.mobile.ui.components.GuruCard
 import com.gurucrm.mobile.ui.components.GuruOutlinedButton
 import com.gurucrm.mobile.ui.components.GuruPrimaryButton
-import com.gurucrm.mobile.ui.components.LoadingScreen
 import com.gurucrm.mobile.ui.components.PageHeader
 import com.gurucrm.mobile.ui.components.StatusBadge
 import com.gurucrm.mobile.ui.components.GuruButtonRow
+import com.gurucrm.mobile.ui.components.SkeletonList
 import com.gurucrm.mobile.ui.theme.GuruSpacing
 import com.gurucrm.mobile.util.canEdit
 import kotlinx.coroutines.launch
@@ -60,6 +60,8 @@ fun OrdersScreen(
     var orders by remember { mutableStateOf<List<OrderDto>>(emptyList()) }
     var refreshKey by remember { mutableStateOf(0) }
     var actionError by remember { mutableStateOf<String?>(null) }
+    // Which order is mid-request, so only that row's buttons show a spinner.
+    var busyOrderId by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     // The server rejects some transitions (e.g. delivering an order that still has a
@@ -67,11 +69,14 @@ fun OrdersScreen(
     fun changeStatus(id: String, status: String) {
         scope.launch {
             actionError = null
+            busyOrderId = id
             try {
                 api.updateOrderStatus(id, status)
                 refreshKey++
             } catch (e: Exception) {
                 actionError = e.message ?: "Could not update the order"
+            } finally {
+                busyOrderId = null
             }
         }
     }
@@ -102,7 +107,7 @@ fun OrdersScreen(
             FilterChipRow(options = statusFilters, selected = statusFilter, onSelect = { statusFilter = it })
             actionError?.let { ErrorBanner(it, onRetry = { actionError = null }) }
             when {
-                loading -> LoadingScreen()
+                loading -> SkeletonList(count = 5, lines = 3)
                 error != null -> ErrorBanner(error!!, onRetry = { refreshKey++ })
                 orders.isEmpty() -> EmptyState("No orders")
                 else -> LazyColumn(
@@ -126,20 +131,26 @@ fun OrdersScreen(
                                         "pending" -> {
                                             GuruPrimaryButton(
                                                 text = "Confirm",
+                                                busy = busyOrderId == order.id,
+                                                busyText = "Confirming…",
                                                 onClick = { changeStatus(order.id, "confirmed") },
                                             )
                                             GuruOutlinedButton(
                                                 text = "Cancel",
+                                                busy = busyOrderId == order.id,
                                                 onClick = { changeStatus(order.id, "cancelled") },
                                             )
                                         }
                                         "confirmed" -> {
                                             GuruPrimaryButton(
                                                 text = "Deliver",
+                                                busy = busyOrderId == order.id,
+                                                busyText = "Delivering…",
                                                 onClick = { changeStatus(order.id, "delivered") },
                                             )
                                             GuruOutlinedButton(
                                                 text = "Cancel",
+                                                busy = busyOrderId == order.id,
                                                 onClick = { changeStatus(order.id, "cancelled") },
                                             )
                                         }
