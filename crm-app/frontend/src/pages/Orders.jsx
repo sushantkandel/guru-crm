@@ -6,6 +6,9 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import RequestDeleteDialog from '../components/RequestDeleteDialog';
 import PageHeader from '../components/PageHeader';
 import { LastEditedBy } from '../components/EditAudit';
+import BusyButton from '../components/BusyButton';
+import { TableSkeleton } from '../components/Skeleton';
+import { usePendingAction } from '../hooks/usePendingAction';
 import {
   pageShell,
   pageCard,
@@ -22,7 +25,6 @@ import {
   badgeGreen,
   badgeSlate,
   emptyState,
-  loadingState,
   formInput,
 } from '../utils/formStyles';
 
@@ -43,6 +45,7 @@ export default function Orders() {
   const [requestDeleteTarget, setRequestDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const { canEdit, canDelete, canRequestDelete, isOwner } = useAuth();
+  const { isPending, run } = usePendingAction();
 
   // `loading` starts true and is only ever cleared, so the first paint shows a spinner
   // instead of briefly claiming "No orders found", while later refreshes (status change,
@@ -50,7 +53,7 @@ export default function Orders() {
   const load = () => {
     const params = {};
     if (statusFilter) params.status = statusFilter;
-    Promise.all([
+    return Promise.all([
       api.get('/orders', { params }),
       api.get('/payments/outstanding'),
     ])
@@ -63,14 +66,15 @@ export default function Orders() {
 
   useEffect(() => { load(); }, [statusFilter]);
 
-  const updateStatus = async (id, status) => {
-    try {
-      await api.patch(`/orders/${id}/status`, { status });
-      load();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update status');
-    }
-  };
+  const updateStatus = (id, status) =>
+    run(id, async () => {
+      try {
+        await api.patch(`/orders/${id}/status`, { status });
+        await load();
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to update status');
+      }
+    });
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -116,7 +120,7 @@ export default function Orders() {
 
       <div className={`${pageCard} overflow-hidden`}>
         {loading ? (
-          <div className={loadingState}>Loading…</div>
+          <TableSkeleton columns={isOwner ? 7 : 6} rows={6} label="Loading orders" />
         ) : orders.length === 0 ? (
           <div className={emptyState}>No orders found</div>
         ) : (
@@ -158,19 +162,22 @@ export default function Orders() {
                           <Link to={`/orders/${o.id}/edit`} className={btnLink}>Edit</Link>
                         )}
                         {o.status === 'pending' && (
-                          <button type="button" onClick={() => updateStatus(o.id, 'confirmed')} className={btnLink}>
+                          <BusyButton busy={isPending(o.id)} busyLabel="Confirming…"
+                            onClick={() => updateStatus(o.id, 'confirmed')} className={btnLink}>
                             Confirm
-                          </button>
+                          </BusyButton>
                         )}
                         {o.status === 'confirmed' && (
-                          <button type="button" onClick={() => updateStatus(o.id, 'delivered')} className={btnLinkSuccess}>
+                          <BusyButton busy={isPending(o.id)} busyLabel="Delivering…"
+                            onClick={() => updateStatus(o.id, 'delivered')} className={btnLinkSuccess}>
                             Deliver
-                          </button>
+                          </BusyButton>
                         )}
                         {o.status !== 'cancelled' && o.status !== 'delivered' && (
-                          <button type="button" onClick={() => updateStatus(o.id, 'cancelled')} className={btnLinkWarning}>
+                          <BusyButton busy={isPending(o.id)} busyLabel="Cancelling…"
+                            onClick={() => updateStatus(o.id, 'cancelled')} className={btnLinkWarning}>
                             Cancel
-                          </button>
+                          </BusyButton>
                         )}
                         {o.status !== 'delivered' && canDelete && !outstandingCustomerIds.has(o.customerId) && (
                           <button type="button" onClick={() => setDeleteTarget(o)} className={btnLinkDanger}>

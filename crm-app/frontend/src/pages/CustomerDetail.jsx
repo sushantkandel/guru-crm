@@ -9,6 +9,10 @@ import GoogleMapsDirectionsButton from '../components/GoogleMapsDirectionsButton
 import ShopRouteMap from '../components/ShopRouteMap';
 import PageHeader from '../components/PageHeader';
 import CustomerProductInsights from '../components/CustomerProductInsights';
+import BusyButton from '../components/BusyButton';
+import Spinner from '../components/Spinner';
+import { CardSkeleton, Skeleton } from '../components/Skeleton';
+import { usePendingAction } from '../hooks/usePendingAction';
 import { customerTypeLabel } from '../constants/customerTypes';
 import { resolveShopCoords } from '../utils/mapLinks';
 import {
@@ -33,7 +37,6 @@ import {
   badgeAmber,
   badgeBlue,
   badgeSlate,
-  loadingState,
   formInput,
 } from '../utils/formStyles';
 
@@ -67,6 +70,7 @@ export default function CustomerDetail() {
   const [requestDelete, setRequestDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const { canEdit, canDelete, canRequestDelete, isOwner } = useAuth();
+  const { isPending, run } = usePendingAction();
 
   const load = () => api.get(`/customers/${id}`).then((res) => setCustomer(res.data));
 
@@ -118,26 +122,41 @@ export default function CustomerDetail() {
     setDeleteDialog(null);
   };
 
-  const updateConversionStatus = async (businessStatus) => {
-    try {
-      await api.patch(`/customers/${id}/business-status`, { businessStatus });
-      load();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update status');
-    }
-  };
+  const updateConversionStatus = (businessStatus) =>
+    run('business-status', async () => {
+      try {
+        await api.patch(`/customers/${id}/business-status`, { businessStatus });
+        await load();
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to update status');
+      }
+    });
 
-  const markPaymentCompleted = async (paymentId) => {
-    try {
-      await api.patch(`/payments/${paymentId}/status`, { status: 'completed' });
-      load();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to mark payment completed');
-    }
-  };
+  const markPaymentCompleted = (paymentId) =>
+    run(paymentId, async () => {
+      try {
+        await api.patch(`/payments/${paymentId}/status`, { status: 'completed' });
+        await load();
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to mark payment completed');
+      }
+    });
 
   if (!customer) {
-    return <div className={pageShell}><div className={loadingState}>Loading…</div></div>;
+    return (
+      <div className={pageShell}>
+        <div className="mb-6">
+          <Skeleton className="h-7 mb-2" width="240px" />
+          <Skeleton className="h-4" width="160px" />
+        </div>
+        <div className={detailGrid}>
+          <CardSkeleton lines={2} />
+          <CardSkeleton lines={2} />
+          <CardSkeleton lines={3} />
+        </div>
+        <CardSkeleton lines={4} className="mb-4" />
+      </div>
+    );
   }
 
   const status = customer.businessStatus || 'just_visited';
@@ -166,15 +185,19 @@ export default function CustomerDetail() {
         actions={
           <div className={pageActions}>
             {canEdit && (
+              <span className="inline-flex items-center gap-2">
+              {isPending('business-status') && <Spinner label="Saving status" />}
               <select
                 value={status}
+                disabled={isPending('business-status')}
                 onChange={(e) => updateConversionStatus(e.target.value)}
-                className={`${formInput} w-auto min-w-[9rem] py-2 min-h-[40px] text-sm`}
+                className={`${formInput} w-auto min-w-[9rem] py-2 min-h-[40px] text-sm disabled:opacity-60`}
               >
                 <option value="converted">Converted</option>
                 <option value="not_converted">Not Converted</option>
                 <option value="just_visited">Just Visited</option>
               </select>
+              </span>
             )}
             {locationArgs && (
               <GoogleMapsDirectionsButton
@@ -370,9 +393,10 @@ export default function CustomerDetail() {
                       <td className="whitespace-nowrap space-x-2">
                         <Link to={`/payments/${p.id}/edit`} className={btnLink}>Edit</Link>
                         {p.status === 'pending' && (
-                          <button type="button" onClick={() => markPaymentCompleted(p.id)} className={btnLinkSuccess}>
+                          <BusyButton busy={isPending(p.id)} busyLabel="Saving…"
+                            onClick={() => markPaymentCompleted(p.id)} className={btnLinkSuccess}>
                             Mark completed
-                          </button>
+                          </BusyButton>
                         )}
                         {canDelete && !hasOutstandingBalance && (
                           <button type="button" onClick={() => setDeleteDialog({ type: 'payment', id: p.id })} className={btnLinkDanger}>

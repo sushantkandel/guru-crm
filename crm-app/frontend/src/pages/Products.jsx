@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import RequestDeleteDialog from '../components/RequestDeleteDialog';
 import PageHeader from '../components/PageHeader';
+import { TableSkeleton } from '../components/Skeleton';
 import {
   pageShell,
   formSectionTitle,
@@ -39,10 +40,16 @@ export default function Products() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  // Separate from form submission so the catalog can show a skeleton on first paint.
+  const [listLoading, setListLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const location = useLocation();
 
-  const load = () => api.get('/products').then((res) => setProducts(res.data));
+  const load = () =>
+    api
+      .get('/products')
+      .then((res) => setProducts(res.data))
+      .finally(() => setListLoading(false));
 
   useEffect(() => {
     load();
@@ -151,6 +158,9 @@ export default function Products() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div className={formCard}>
           <h3 className={formSectionTitle}>Catalog</h3>
+          {listLoading ? (
+            <TableSkeleton columns={canEdit ? 6 : 5} rows={5} label="Loading products" />
+          ) : (
           <div className={dataTableWrap}>
             <table className={dataTableCompact}>
               <thead>
@@ -191,7 +201,10 @@ export default function Products() {
               </tbody>
             </table>
           </div>
-          {products.length === 0 && <div className="py-6 text-center text-slate-500">No products yet</div>}
+          )}
+          {!listLoading && products.length === 0 && (
+            <div className="py-6 text-center text-slate-500">No products yet</div>
+          )}
         </div>
 
         {canEdit && (

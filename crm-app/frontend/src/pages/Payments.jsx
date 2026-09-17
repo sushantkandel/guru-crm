@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import RequestDeleteDialog from '../components/RequestDeleteDialog';
 import PageHeader from '../components/PageHeader';
+import BusyButton from '../components/BusyButton';
+import { TableSkeleton } from '../components/Skeleton';
+import { usePendingAction } from '../hooks/usePendingAction';
 import PaymentFilters, { defaultPaymentFilters } from '../components/PaymentFilters';
 import { LastEditedBy } from '../components/EditAudit';
 import {
@@ -22,7 +25,6 @@ import {
   tabBtn,
   tabBtnActive,
   emptyState,
-  loadingState,
 } from '../utils/formStyles';
 
 function buildFilterParams(filters) {
@@ -55,11 +57,12 @@ export default function Payments() {
   const [requestDeleteTarget, setRequestDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const { canEdit, canDelete, canRequestDelete, isOwner } = useAuth();
+  const { isPending, run } = usePendingAction();
 
   const load = () => {
     setLoading(true);
     const params = buildFilterParams(filters);
-    Promise.all([
+    return Promise.all([
       api.get('/payments/outstanding', { params }),
       api.get('/payments', { params: { ...params, status: 'pending' } }),
       api.get('/payments', { params: { ...params, status: 'completed' } }),
@@ -77,14 +80,15 @@ export default function Payments() {
     return () => clearTimeout(timer);
   }, [filters]);
 
-  const markCompleted = async (id) => {
-    try {
-      await api.patch(`/payments/${id}/status`, { status: 'completed' });
-      load();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update');
-    }
-  };
+  const markCompleted = (id) =>
+    run(id, async () => {
+      try {
+        await api.patch(`/payments/${id}/status`, { status: 'completed' });
+        await load();
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to update');
+      }
+    });
 
   const outstandingCustomerIds = new Set(outstanding.map((c) => c.id));
 
@@ -147,7 +151,7 @@ export default function Payments() {
       {tab === 'due' ? (
         <div className={`${pageCard} mt-4 overflow-hidden`}>
           {loading ? (
-            <div className={loadingState}>Loading…</div>
+            <TableSkeleton columns={5} rows={6} label="Loading payments" />
           ) : outstanding.length === 0 ? (
             <div className={emptyState}>All payments cleared</div>
           ) : (
@@ -198,7 +202,7 @@ export default function Payments() {
       ) : tab === 'pending' ? (
         <div className={`${pageCard} mt-4 overflow-hidden`}>
           {loading ? (
-            <div className={loadingState}>Loading…</div>
+            <TableSkeleton columns={5} rows={6} label="Loading payments" />
           ) : pendingPayments.length === 0 ? (
             <div className={emptyState}>No pending credit or cheque payments</div>
           ) : (
@@ -239,9 +243,10 @@ export default function Payments() {
                       {canEdit && (
                         <td className="whitespace-nowrap space-x-2">
                           <Link to={`/payments/${p.id}/edit`} className={btnLink}>Edit</Link>
-                          <button type="button" onClick={() => markCompleted(p.id)} className={btnLinkSuccess}>
+                          <BusyButton busy={isPending(p.id)} busyLabel="Saving…"
+                            onClick={() => markCompleted(p.id)} className={btnLinkSuccess}>
                             Mark completed
-                          </button>
+                          </BusyButton>
                         </td>
                       )}
                     </tr>
@@ -254,7 +259,7 @@ export default function Payments() {
       ) : (
         <div className={`${pageCard} mt-4 overflow-hidden`}>
           {loading ? (
-            <div className={loadingState}>Loading…</div>
+            <TableSkeleton columns={5} rows={6} label="Loading payments" />
           ) : payments.length === 0 ? (
             <div className={emptyState}>No completed payments yet</div>
           ) : (

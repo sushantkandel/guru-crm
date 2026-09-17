@@ -7,20 +7,19 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import RequestDeleteDialog from '../components/RequestDeleteDialog';
 import PageHeader from '../components/PageHeader';
 import { LastEditedBy } from '../components/EditAudit';
+import { TableSkeleton } from '../components/Skeleton';
 import {
   pageShell,
   pageCard,
   dataTableWrap,
   dataTable,
   btnToolbarPrimary,
-  btnLink,
   btnLinkDanger,
   btnLinkWarning,
   badgeGreen,
   badgeAmber,
   badgeBlue,
   emptyState,
-  loadingState,
   formAlertError,
 } from '../utils/formStyles';
 
@@ -146,7 +145,7 @@ export default function Customers() {
 
       <div className={`${pageCard} mt-4 overflow-hidden`}>
         {loading ? (
-          <div className={loadingState}>Loading…</div>
+          <TableSkeleton columns={isOwner ? 10 : 9} rows={8} label="Loading customers" />
         ) : customers.length === 0 ? (
           <div className={emptyState}>No customers found</div>
         ) : (

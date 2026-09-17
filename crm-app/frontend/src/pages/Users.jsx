@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PasswordInput from '../components/PasswordInput';
 import PageHeader from '../components/PageHeader';
+import { TableSkeleton } from '../components/Skeleton';
 import {
   pageShell,
   pageCardPadded,
@@ -32,9 +33,14 @@ export default function Users() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
-  const load = () => api.get('/auth/users').then((res) => setUsers(res.data));
+  const load = () =>
+    api
+      .get('/auth/users')
+      .then((res) => setUsers(res.data))
+      .finally(() => setListLoading(false));
 
   useEffect(() => { load(); }, []);
 
@@ -100,6 +106,9 @@ export default function Users() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div className={pageCardPadded}>
           <h3 className={formSectionTitle}>Team Members</h3>
+          {listLoading ? (
+            <TableSkeleton columns={4} rows={3} label="Loading team members" />
+          ) : (
           <div className={dataTableWrap}>
             <table className={dataTableCompact}>
               <thead>
@@ -127,6 +136,7 @@ export default function Users() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
         <div className={pageCardPadded}>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import PageHeader from '../components/PageHeader';
+import { StatCardsSkeleton, TableSkeleton } from '../components/Skeleton';
 import {
   pageShell,
   pageCardPadded,
@@ -14,7 +15,6 @@ import {
   statCardLabel,
   statCardValue,
   statCardSub,
-  loadingState,
 } from '../utils/formStyles';
 
 function StatCard({ label, value, sub, color, to }) {
@@ -43,7 +43,18 @@ export default function Dashboard() {
   }, []);
 
   if (!stats) {
-    return <div className={pageShell}><div className={loadingState}>Loading dashboard…</div></div>;
+    return (
+      <div className={pageShell}>
+        <PageHeader title="Dashboard" subtitle="Overview of customers, orders, and payments" />
+        <StatCardsSkeleton count={4} />
+        <div className={pageCardPadded}>
+          <div className={pageCardHeader}>
+            <h3 className={pageSectionTitle}>Top Outstanding Payments</h3>
+          </div>
+          <TableSkeleton columns={3} rows={4} label="Loading outstanding payments" />
+        </div>
+      </div>
+    );
   }
 
   return (

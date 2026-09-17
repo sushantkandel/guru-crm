@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PageHeader from '../components/PageHeader';
+import { TableSkeleton } from '../components/Skeleton';
 import {
   pageShell,
   pageCard,
@@ -37,10 +38,15 @@ export default function DeleteRequests() {
   const [reviewAction, setReviewAction] = useState(null);
   const [reviewNote, setReviewNote] = useState('');
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
 
   const load = () => {
     const params = statusFilter ? { status: statusFilter } : {};
-    api.get('/delete-requests', { params }).then((res) => setRequests(res.data));
+    setListLoading(true);
+    return api
+      .get('/delete-requests', { params })
+      .then((res) => setRequests(res.data))
+      .finally(() => setListLoading(false));
   };
 
   useEffect(() => { load(); }, [statusFilter]);
@@ -91,7 +97,9 @@ export default function DeleteRequests() {
       </div>
 
       <div className={`${pageCard} overflow-hidden`}>
-        {requests.length === 0 ? (
+        {listLoading ? (
+          <TableSkeleton columns={6} rows={4} label="Loading delete requests" />
+        ) : requests.length === 0 ? (
           <div className={emptyState}>No delete requests</div>
         ) : (
           <div className={dataTableWrap}>
