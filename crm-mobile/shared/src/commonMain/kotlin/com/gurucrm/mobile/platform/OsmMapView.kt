@@ -54,6 +54,8 @@ fun buildMapHtml(
       background: #fff; border: 2px solid #dc2626; color: #991b1b;
       font-weight: 700; font-size: 11px; padding: 2px 6px; border-radius: 4px;
       white-space: nowrap;
+      /* Long shop names ran off the edge of the map. */
+      max-width: 40vw; overflow: hidden; text-overflow: ellipsis;
     }
   </style>
 </head>
@@ -100,10 +102,13 @@ fun buildMapHtml(
     iconSize: [14, 14], iconAnchor: [7, 7]
   });
 
-  const bounds = [];
+  // Only the shops decide the viewport. Including the device position meant that a
+  // rep who is away from their territory (or whose GPS has not settled) got a map
+  // zoomed out far enough to contain both, collapsing every shop into one dot.
+  const shopBounds = [];
   markers.forEach(m => {
     const latlng = [m.lat, m.lng];
-    bounds.push(latlng);
+    shopBounds.push(latlng);
     const marker = L.marker(latlng, { icon: shopIcon }).addTo(map);
     if (m.title) marker.bindTooltip(m.title, { permanent: true, direction: 'top', className: 'shop-label' });
     marker.bindPopup('<b>' + m.title + '</b><br/>' + (m.subtitle || ''));
@@ -123,7 +128,6 @@ fun buildMapHtml(
       radius: 8, color: '#fff', weight: 2, fillColor: '#4285f4', fillOpacity: 1
     }).addTo(map);
     dot.bindTooltip('You', { permanent: false, direction: 'right' });
-    bounds.push([device.lat, device.lng]);
   }
 
   if (routeGeo) {
@@ -133,8 +137,8 @@ fun buildMapHtml(
     } catch (e) {}
   }
 
-  if (autoFitMarkers && bounds.length > 1) {
-    map.fitBounds(bounds, { padding: [40, 40] });
+  if (autoFitMarkers && shopBounds.length > 1) {
+    map.fitBounds(shopBounds, { padding: [40, 40], maxZoom: 16 });
   }
 
   if (clickable) {

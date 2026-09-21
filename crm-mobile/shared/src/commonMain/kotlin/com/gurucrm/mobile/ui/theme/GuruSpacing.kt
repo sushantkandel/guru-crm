@@ -69,4 +69,13 @@ object GuruSpacing {
 
     /** Height of the bottom navigation bar. */
     val navBarHeight = 64.dp
+
+    /** Smallest usable map viewport; below this the tiles are not worth showing. */
+    val mapMinHeight = 220.dp
+
+    /**
+     * Ceiling for the shop list under the map. Without a cap the list is measured
+     * at its full intrinsic height first and the weighted map collapses to nothing.
+     */
+    val mapListMaxHeight = 260.dp
 }

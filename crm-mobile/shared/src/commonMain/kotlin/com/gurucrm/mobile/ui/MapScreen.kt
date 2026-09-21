@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.gurucrm.mobile.api.GuruApi
 import com.gurucrm.mobile.data.LatLng
 import com.gurucrm.mobile.data.MapLocationQuery
@@ -150,11 +151,13 @@ fun MapScreen(
             Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = GuruSpacing.screenHorizontal))
         }
 
+        // The map must keep its height no matter how many shops are listed below, so
+        // the list is capped and scrollable and the map takes everything that is left.
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .heightIn(min = 240.dp),
+                .heightIn(min = GuruSpacing.mapMinHeight),
         ) {
             OsmMapView(
                 center = mapCenter,
@@ -191,7 +194,13 @@ fun MapScreen(
             }
         }
 
-        Column(Modifier.padding(GuruSpacing.md)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = GuruSpacing.mapListMaxHeight)
+                .verticalScroll(rememberScrollState())
+                .padding(GuruSpacing.md),
+        ) {
             selectedShop?.let { shop ->
                 Text(shop.shopName, style = MaterialTheme.typography.titleMedium)
                 Text("${shop.name} · ${shop.phone}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -230,7 +239,7 @@ fun MapScreen(
                 }
             } ?: run {
                 Text("Tap a marker or shop below.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                shops.take(8).forEach { shop ->
+                shops.forEach { shop ->
                     GuruOutlinedButton(
                         text = "${shop.shopName} — ${shop.municipality}, W${shop.ward}",
                         onClick = { selectedShop = shop },
